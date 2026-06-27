@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photography — Dr. Sripati Jana</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="gallery/photos.js"></script>
+</head>
+<body>
+
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-brand" href="index.html">Dr. Sripati Jana</a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="research.html">Research</a></li>
+        <li><a href="publications.html">Publications</a></li>
+        <li><a href="conferences.html">Conferences</a></li>
+        <li><a href="gallery.html" class="nav-active">Gallery</a></li>
+        <li><a href="useful-links.html">Links</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section id="gallery">
+    <div class="section-inner">
+      <h2 class="section-title">Photography</h2>
+      <div class="section-gap"></div>
+
+      <p class="gallery-intro">
+        Photography is something I do when I&rsquo;m not in the lab &mdash; a way of
+        paying closer attention to the world. A few favorites below.
+      </p>
+
+      <!--
+        To add real photos:
+        1. Place image files in the gallery/ subfolder.
+        2. Replace each placeholder <li> with:
+           <li class="gallery-item" data-src="gallery/photo.jpg" data-caption="Your caption">
+             <div class="gallery-thumb">
+               <img src="gallery/photo.jpg" alt="Your caption" loading="lazy" />
+             </div>
+             <p class="gallery-caption">Your caption</p>
+           </li>
+      -->
+
+      <ul class="gallery-grid" id="gallery-grid">
+        <!-- photos loaded automatically from gallery/photos.json -->
+      </ul>
+    </div>
+  </section>
+
+  <!-- Lightbox overlay -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
+    <button class="lightbox-close" id="lb-close" aria-label="Close">&times;</button>
+    <button class="lightbox-nav lightbox-prev" id="lb-prev" aria-label="Previous photo">&#8249;</button>
+    <div class="lightbox-inner">
+      <img class="lightbox-img" id="lb-img" src="" alt="" />
+      <p class="lightbox-caption" id="lb-caption"></p>
+    </div>
+    <button class="lightbox-nav lightbox-next" id="lb-next" aria-label="Next photo">&#8250;</button>
+  </div>
+
+  <footer>
+    &copy; 2026 Dr. Sripati Jana &middot; EPFL &middot; Updated June 2026
+    &middot; <a class="footer-link" href="gallery.html">Photography</a>
+  </footer>
+
+  <script>
+    (function () {
+      var grid    = document.getElementById('gallery-grid');
+      var lightbox = document.getElementById('lightbox');
+      var lbImg   = document.getElementById('lb-img');
+      var lbCap   = document.getElementById('lb-caption');
+      var lbClose = document.getElementById('lb-close');
+      var lbPrev  = document.getElementById('lb-prev');
+      var lbNext  = document.getElementById('lb-next');
+      var items   = [];
+      var current = 0;
+
+      function openLb(index) {
+        if (!items.length) return;
+        current = (index + items.length) % items.length;
+        lbImg.src = items[current].dataset.src;
+        lbImg.alt = items[current].dataset.caption;
+        lbCap.textContent = items[current].dataset.caption;
+        lightbox.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        lbClose.focus();
+      }
+
+      function closeLb() {
+        lightbox.classList.remove('open');
+        document.body.style.overflow = '';
+        lbImg.src = '';
+      }
+
+      function buildGallery(photos) {
+        photos.forEach(function (photo, i) {
+          var li = document.createElement('li');
+          li.className = 'gallery-item';
+          li.dataset.src     = 'gallery/' + photo.src;
+          li.dataset.caption = photo.caption;
+          li.setAttribute('tabindex', '0');
+          li.innerHTML =
+            '<div class="gallery-thumb">' +
+              '<img src="gallery/' + photo.src + '" alt="' + photo.caption + '" loading="lazy" />' +
+            '</div>' +
+            '<p class="gallery-caption">' + photo.caption + '</p>';
+          li.addEventListener('click', function () { openLb(i); });
+          li.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLb(i); }
+          });
+          grid.appendChild(li);
+        });
+        items = Array.from(document.querySelectorAll('.gallery-item[data-src]'));
+      }
+
+      // Load photos from gallery/photos.js (works with file:// and hosted)
+      if (typeof GALLERY_PHOTOS !== 'undefined') {
+        buildGallery(GALLERY_PHOTOS);
+      }
+
+      lbClose.addEventListener('click', closeLb);
+      lbPrev.addEventListener('click', function () { openLb(current - 1); });
+      lbNext.addEventListener('click', function () { openLb(current + 1); });
+      lightbox.addEventListener('click', function (e) { if (e.target === lightbox) closeLb(); });
+      document.addEventListener('keydown', function (e) {
+        if (!lightbox.classList.contains('open')) return;
+        if (e.key === 'Escape')     closeLb();
+        if (e.key === 'ArrowLeft')  openLb(current - 1);
+        if (e.key === 'ArrowRight') openLb(current + 1);
+      });
+    })();
+  </script>
+
+</body>
+</html>

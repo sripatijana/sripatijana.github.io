@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Editor
+.vscode/
+.idea/
+
+# Temp / build
+*.tmp
+*.log

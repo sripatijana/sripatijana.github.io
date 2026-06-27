@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conferences — Dr. Sripati Jana</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    #conferences .section-inner { max-width: 1100px; }
+
+    .conf-intro {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-bottom: 2.25rem;
+      line-height: 1.6;
+    }
+
+    .conf-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* Each entry: fixed badge column + details column */
+    .conf-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.5rem;
+      padding: 1.4rem 0;
+      border-bottom: 1px solid #d0d5db;
+    }
+
+    .conf-item:first-child { border-top: 1px solid #d0d5db; }
+
+    /* Fixed-width badge column — all badges align here */
+    .conf-badge-col {
+      flex: 0 0 58px;
+      padding-top: 0.1rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .conf-type-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      border-radius: 3px;
+      padding: 0.18rem 0.5rem;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .conf-type-badge--oral   { background: #2c5f8a; }
+    .conf-type-badge--poster { background: var(--muted); }
+
+    /* Details column */
+    .conf-details { flex: 1; min-width: 0; }
+
+    .conf-name-line {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .conf-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+    .conf-name a {
+      color: var(--navy);
+      text-decoration: none;
+    }
+    .conf-name a:hover {
+      text-decoration: underline;
+      text-decoration-color: #8a9bb5;
+    }
+
+    .conf-date {
+      font-size: 0.88rem;
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    .conf-location {
+      font-size: 0.87rem;
+      color: var(--muted);
+      margin: 0 0 0.3rem;
+    }
+
+    .conf-talk-title {
+      font-size: 0.92rem;
+      font-style: italic;
+      color: var(--text);
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    @media (max-width: 640px) {
+      .conf-item     { gap: 1rem; }
+      .conf-badge-col { flex: 0 0 50px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-brand" href="index.html">Dr. Sripati Jana</a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="research.html">Research</a></li>
+        <li><a href="publications.html">Publications</a></li>
+        <li><a href="conferences.html" class="nav-active">Conferences</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="useful-links.html">Links</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section id="conferences">
+    <div class="section-inner">
+      <h2 class="section-title">Conference Presentations and Posters</h2>
+      <div class="section-gap"></div>
+      <p class="conf-intro">A selection of talks and posters presented at international conferences and symposia.</p>
+
+      <ul class="conf-list">
+
+        <li class="conf-item">
+          <div class="conf-badge-col">
+            <span class="conf-type-badge conf-type-badge--oral">Oral</span>
+          </div>
+          <div class="conf-details">
+            <div class="conf-name-line">
+              <span class="conf-name"><a href="https://pacifichem.org/" target="_blank" rel="noopener">Pacifichem 2025</a></span>
+              <span class="conf-date">— December 2025</span>
+            </div>
+            <p class="conf-location">Honolulu, HI, USA</p>
+            <p class="conf-talk-title">"Tunable N-Heterocyclic Carbenes in Radical-Mediated Asymmetric Organocatalysis"</p>
+          </div>
+        </li>
+
+        <li class="conf-item">
+          <div class="conf-badge-col">
+            <span class="conf-type-badge conf-type-badge--oral">Oral</span>
+          </div>
+          <div class="conf-details">
+            <div class="conf-name-line">
+              <span class="conf-name">ICOMC 2024</span>
+              <span class="conf-date">— July 2024</span>
+            </div>
+            <p class="conf-location">Agra, India</p>
+            <p class="conf-talk-title">"Enantioselective Acyl-fluoroalkylation of Olefins by Bulky Thiazolium Carbene Organocatalysis"</p>
+          </div>
+        </li>
+
+        <li class="conf-item">
+          <div class="conf-badge-col">
+            <span class="conf-type-badge conf-type-badge--oral">Oral</span>
+          </div>
+          <div class="conf-details">
+            <div class="conf-name-line">
+              <span class="conf-name"><a href="https://veranstaltungen.gdch.de/microsite/index.cfm?l=10886&modus=" target="_blank" rel="noopener">ORCHEM 2022</a></span>
+              <span class="conf-date">— September 2022</span>
+            </div>
+            <p class="conf-location">Münster, Germany</p>
+            <p class="conf-talk-title">"Photocatalytic Generation of Free Triplet Carbenes and Their Applications"</p>
+          </div>
+        </li>
+
+        <li class="conf-item">
+          <div class="conf-badge-col">
+            <span class="conf-type-badge conf-type-badge--oral">Oral</span>
+          </div>
+          <div class="conf-details">
+            <div class="conf-name-line">
+              <span class="conf-name">Advances in Green Chemistry and Sustainable Technology</span>
+              <span class="conf-date">— September 2021</span>
+            </div>
+            <p class="conf-location">Virtual International Conference</p>
+            <p class="conf-talk-title">"Gold-Catalyzed Site-Selective C-H Functionalization Reactions of Unprotected N-Heterocycles via Carbene Transfer Reactions"</p>
+          </div>
+        </li>
+
+        <li class="conf-item">
+          <div class="conf-badge-col">
+            <span class="conf-type-badge conf-type-badge--poster">Poster</span>
+          </div>
+          <div class="conf-details">
+            <div class="conf-name-line">
+              <span class="conf-name">WiFo 2019</span>
+              <span class="conf-date">— September 2019</span>
+            </div>
+            <p class="conf-location">Aachen, Germany</p>
+            <p class="conf-talk-title">"Catalytic Sigmatropic Rearrangement Reactions of Selenonium Ylides with Diazoalkanes"</p>
+          </div>
+        </li>
+
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    &copy; 2026 Dr. Sripati Jana &middot; EPFL &middot; Updated June 2026
+    &middot; <a class="footer-link" href="gallery.html">Photography</a>
+  </footer>
+
+</body>
+</html>
