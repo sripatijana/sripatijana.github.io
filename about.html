@@ -4,7 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>About — Dr. Sripati Jana</title>
+  <meta name="description" content="About Dr. Sripati Jana — Research scientist at EPFL specialising in asymmetric catalysis, chiral catalyst design, and mechanism-guided synthesis.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.9.4/css/academicons.min.css" />
 </head>
 <body>
 
@@ -21,6 +25,7 @@
         <li><a href="useful-links.html">Links</a></li>
         <li><a href="contact.html">Contact</a></li>
       </ul>
+      <button class="dark-toggle" id="dark-toggle" aria-label="Toggle dark mode">🌙</button>
     </div>
   </nav>
 
@@ -75,11 +80,11 @@
           paper, and building collaborations where good ideas travel freely.
         </p>
         <div class="contact-links">
-          <a href="mailto:sripati.jana@epfl.ch">sripati.jana@epfl.ch</a>
-          <a href="https://orcid.org/0000-0000-0000-0000" target="_blank" rel="noopener">ORCID</a>
-          <a href="https://scholar.google.com" target="_blank" rel="noopener">Google Scholar</a>
-          <a href="https://www.epfl.ch" target="_blank" rel="noopener">EPFL</a>
-          <a href="contact.html">Full contact &rarr;</a>
+          <a href="mailto:sripati.jana@epfl.ch"><i class="fas fa-envelope"></i> sripati.jana@epfl.ch</a>
+          <a href="https://orcid.org/0000-0001-7155-8384" target="_blank" rel="noopener"><i class="ai ai-orcid"></i> ORCID</a>
+          <a href="https://scholar.google.com/citations?user=dK_K_C8AAAAJ&hl=en" target="_blank" rel="noopener"><i class="ai ai-google-scholar"></i> Google Scholar</a>
+          <a href="https://www.linkedin.com/in/dr-sripati-jana123" target="_blank" rel="noopener"><i class="fab fa-linkedin"></i> LinkedIn</a>
+          <a href="https://www.epfl.ch/labs/lacs/" target="_blank" rel="noopener"><i class="fas fa-flask"></i> Cramer Group — EPFL</a>
         </div>
       </div>
     </div>
@@ -152,6 +157,24 @@
     <br><img src="https://hits.sh/sripatijana.github.io.svg?style=flat&label=Visitors&color=2c5f8a&labelColor=1a2e4a" alt="Visitor counter" style="margin-top:0.5rem;vertical-align:middle;" />
   </footer>
 
+  <button class="back-to-top" id="back-to-top" aria-label="Back to top">&#8679;</button>
+  <script>
+    // Dark mode
+    var toggle = document.getElementById('dark-toggle');
+    if (localStorage.getItem('dark') === '1') document.body.classList.add('dark-mode');
+    toggle.addEventListener('click', function() {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('dark', document.body.classList.contains('dark-mode') ? '1' : '0');
+      toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+    });
+    toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+    // Back to top
+    var btn = document.getElementById('back-to-top');
+    window.addEventListener('scroll', function() {
+      btn.classList.toggle('visible', window.scrollY > 300);
+    });
+    btn.addEventListener('click', function() { window.scrollTo({top:0, behavior:'smooth'}); });
+  </script>
   <script data-goatcounter="https://sripatijana.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

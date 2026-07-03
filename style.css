@@ -1347,3 +1347,64 @@ footer {
 }
 
 .form-submit:hover { background: var(--navy); }
+
+/* ── Dark mode ────────────────────────────────────────────── */
+body.dark-mode {
+  --navy:   #a8c4e0;
+  --accent: #7aafd4;
+  --text:   #e2e8f0;
+  --muted:  #94a3b8;
+  --border: #2d3748;
+  --bg:     #1a202c;
+  --white:  #0f1520;
+  background: #0f1520;
+  color: #e2e8f0;
+}
+
+body.dark-mode nav        { background: #0d1a2b; }
+body.dark-mode .pub-title a { color: #7aafd4; }
+body.dark-mode .contact-form input,
+body.dark-mode .contact-form textarea {
+  background: #1a202c;
+  color: #e2e8f0;
+  border-color: #2d3748;
+}
+
+.dark-toggle {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.85);
+  border-radius: 4px;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.dark-toggle:hover { background: rgba(255,255,255,0.12); }
+
+/* ── Back to top ──────────────────────────────────────────── */
+.back-to-top {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, background 0.15s;
+  z-index: 200;
+}
+.back-to-top.visible { opacity: 1; pointer-events: auto; }
+.back-to-top:hover   { background: var(--navy); }
