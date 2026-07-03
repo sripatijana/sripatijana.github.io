@@ -1287,3 +1287,63 @@ footer {
     padding: 0.6rem 0.75rem;
   }
 }
+
+/* ── Contact form ─────────────────────────────────────────── */
+.contact-form {
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-group label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.form-required { color: #c0392b; }
+
+.form-group input,
+.form-group textarea {
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.6rem 0.85rem;
+  transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.form-group textarea { resize: vertical; }
+
+.form-submit {
+  align-self: flex-start;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  padding: 0.65rem 1.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.form-submit:hover { background: var(--navy); }
