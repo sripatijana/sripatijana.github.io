@@ -1371,18 +1371,26 @@ body.dark-mode .contact-form textarea {
 }
 
 .dark-toggle {
-  background: none;
-  border: 1px solid rgba(255,255,255,0.3);
-  color: rgba(255,255,255,0.85);
-  border-radius: 4px;
-  padding: 0.3rem 0.6rem;
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 1.1rem;
   cursor: pointer;
-  font-size: 0.85rem;
-  margin-left: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  opacity: 1;
   transition: background 0.15s;
-  flex-shrink: 0;
+  z-index: 200;
 }
-.dark-toggle:hover { background: rgba(255,255,255,0.12); }
+.dark-toggle:hover { background: var(--navy); }
 
 /* ── Back to top ──────────────────────────────────────────── */
 .back-to-top {
