@@ -4,3 +4,5 @@ export * from './structure.js';
 export * from './checks.js';
 export * from './document.js';
 export * from './docx.js';
+export * from './exchangeable.js';
+export * from './abbrev.js';

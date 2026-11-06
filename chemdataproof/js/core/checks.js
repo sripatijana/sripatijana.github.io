@@ -8,6 +8,7 @@ import {
   segment, splitNmrHeader, parseProtonData, parsePeakList, parseHRMS, expectedJCount, decimalsOf,
 } from './parse.js';
 import { analyzeSmiles, compareStructures } from './structure.js';
+import { SOLVENTS, solventKey, explainMissing } from './exchangeable.js';
 
 export const DEFAULTS = { ppmTol: 5, jTol: 0.3 };
 
@@ -140,19 +141,7 @@ function checkProton(h, compound, struct, opt, add) {
   const noInt = sig.filter(s => s.nH === null);
   if (noInt.length) add('warning', S, `${plural(noInt.length, 'signal')} without an integration`, noInt.map(s => s.raw).join('; '), { anchor: noInt[0].raw });
   const sum = sig.reduce((a, s) => a + (s.nH || 0), 0);
-  if (compound) {
-    const expH = compound.H || 0;
-    const diff = Math.round((expH - sum) * 100) / 100;
-    const exch = struct ? struct.exchangeableH : null;
-    if (diff === 0) add('ok', S, `Integrations sum to ${sum} H, matching the formula`);
-    else if (diff > 0 && exch !== null && diff <= exch) {
-      add('info', S, `Integrations sum to ${sum} H; formula has ${expH} H`,
-        `The ${plural(diff, 'missing proton')} could be OH/NH/SH (${exch} exchangeable in the structure). Fine if not observed, but consider stating it.`, { fyi: true });
-    } else {
-      add('error', S, `Integrations sum to ${sum} H, but the formula has ${expH} H`,
-        diff > 0 ? `${plural(diff, 'proton')} missing.` : `${plural(-diff, 'proton')} too many.`);
-    }
-  }
+  if (compound) checkIntegrationTotal(h, sig, sum, compound, struct, add, S);
 
   // Multiplicity vs number of J values
   for (const s of sig) {
@@ -213,6 +202,75 @@ function checkProton(h, compound, struct, opt, add) {
     if ((struct.stereoCenters > 0 || struct.hasStereo) && struct.ch2Count > 0) detail += ' The structure is stereogenic, so CH₂ protons may be diastereotopic and give extra signals.';
     detail += ' Overlap reduces, and diastereotopicity increases, the observed count; this is for orientation only.';
     add('info', S, `${plural(sig.length, 'signal')} reported, ${env} H environments in the structure`, detail, { fyi: true });
+  }
+}
+
+
+// ---------- ¹H integration total, aware of exchangeable protons and solvent ----------
+const VIS_TEXT = {
+  'often-missing': 'often broad or not observed',
+  variable: 'sometimes broad or not observed',
+  usually: 'normally observed',
+  exchanged: 'exchanged with deuterium and not observed',
+};
+
+function listGroups(gs) {
+  const by = new Map();
+  for (const g of gs) by.set(g.label, (by.get(g.label) || 0) + g.nH / g.count);
+  return [...by].map(([l, n]) => `${l} (${n}H)`).join(', ');
+}
+
+function checkIntegrationTotal(h, sig, sum, compound, struct, add, S) {
+  const expH = compound.H || 0;
+  const diff = Math.round((expH - sum) * 100) / 100;
+  const sk = solventKey(h.solvent);
+  const sol = sk ? SOLVENTS[sk] : null;
+  const cls = sol ? sol.cls : 'aprotic-weak';
+  const solName = sol ? sol.name : (h.solvent || 'this solvent');
+  const groups = struct && struct.exchangeable ? struct.exchangeable.map(g => ({ ...g, _vis: g.group.visible[cls] })) : null;
+  const exch = groups ? groups.reduce((a, g) => a + g.nH, 0) : (struct ? struct.exchangeableH : 0);
+
+  if (diff === 0) {
+    if (cls === 'protic' && exch > 0) {
+      add('warning', S, `Integrations sum to ${sum} H including ${exch} exchangeable H, but the solvent is ${solName}`,
+        `In ${solName}, ${listGroups(groups || [])} exchange with deuterium and are normally not observed. Check whether these protons were really seen, or whether a signal was integrated too high.`);
+    } else {
+      add('ok', S, `Integrations sum to ${sum} H, matching the formula`);
+    }
+    return;
+  }
+  if (diff < 0) {
+    add('error', S, `Integrations sum to ${sum} H, but the formula has ${expH} H`, `${plural(-diff, 'proton')} too many.`);
+    return;
+  }
+  // diff > 0: protons missing
+  if (!struct) {
+    add('error', S, `Integrations sum to ${sum} H, but the formula has ${expH} H`, `${plural(diff, 'proton')} missing.`);
+    return;
+  }
+  const pick = groups && groups.length ? explainMissing(groups, diff) : null;
+  if (!pick) {
+    if (exch && diff > exch) {
+      add('error', S, `Integrations sum to ${sum} H, but the formula has ${expH} H`,
+        `${plural(diff, 'proton')} missing; at most ${exch} of them could be exchangeable (OH/NH/SH), so at least ${diff - exch} C–H proton${diff - exch === 1 ? ' is' : 's are'} unaccounted for.`);
+    } else {
+      add('error', S, `Integrations sum to ${sum} H, but the formula has ${expH} H`, `${plural(diff, 'proton')} missing.`);
+    }
+    return;
+  }
+  const worst = pick.reduce((w, g) => (({ usually: 3, variable: 2, 'often-missing': 1, exchanged: 0 })[g._vis] > ({ usually: 3, variable: 2, 'often-missing': 1, exchanged: 0 })[w._vis] ? g : w), pick[0]);
+  const names = listGroups(pick);
+  if (worst._vis === 'exchanged') {
+    add('info', S, `Integrations sum to ${sum} H; the ${diff} missing H are the exchangeable ${names}`,
+      `Expected in ${solName}, where these protons exchange with deuterium.`, { fyi: true });
+  } else if (worst._vis === 'often-missing' || worst._vis === 'variable') {
+    const range = worst.group.shift[cls];
+    add('info', S, `Integrations sum to ${sum} H; the ${diff} missing H can be the ${names}`,
+      `In ${solName} this proton is ${VIS_TEXT[worst._vis]}${range ? ` (typically δ ${range[0]}–${range[1]}, broad)` : ''}. Fine if not seen; journals prefer a note such as "OH not observed".`, { fyi: worst._vis === 'often-missing' });
+  } else {
+    const range = worst.group.shift[cls];
+    add('warning', S, `${plural(diff, 'proton')} missing: the ${names} is usually visible in ${solName}`,
+      `Expected around δ ${range ? `${range[0]}–${range[1]}` : '?'}${cls === 'aprotic-weak' ? ' as a broad signal' : ''}. Check whether it was overlooked or lies under another signal.`);
   }
 }
 

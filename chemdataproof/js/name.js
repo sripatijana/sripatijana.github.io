@@ -1,6 +1,7 @@
 // Compound name -> structure via OPSIN on the structure server.
 import { extractName } from './core/document.js';
 import { serverUrl } from './ocsr.js';
+import { expandAbbreviations } from './core/abbrev.js';
 
 const $ = id => document.getElementById(id);
 export { extractName };
@@ -24,10 +25,18 @@ export async function resolveName() {
   }
   msg('Reading the name with OPSIN…');
   try {
-    const r = await fetch(`${url}/name?q=${encodeURIComponent(name)}`);
-    const j = await r.json();
+    const ask = async q => (await fetch(`${url}/name?q=${encodeURIComponent(q)}`)).json();
+    let j = await ask(name);
+    let note = '';
+    if (!j.smiles) {
+      const ex = expandAbbreviations(name);
+      if (ex.used.length && ex.name !== name) {
+        const j2 = await ask(ex.name);
+        if (j2.smiles) { j = j2; note = ` (read as "${ex.name}")`; }
+      }
+    }
     Object.assign(nameState, { name, smiles: j.smiles || '', error: j.error || '' });
-    if (j.smiles) msg(`OPSIN read the name: ${j.smiles}`, 'good');
+    if (j.smiles) msg(`OPSIN read the name${note}: ${j.smiles}`, 'good');
     else msg(`OPSIN could not read the name: ${j.error}`, 'warn');
   } catch {
     Object.assign(nameState, { name, smiles: '', error: 'server unreachable' });

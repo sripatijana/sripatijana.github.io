@@ -1,5 +1,5 @@
 // Whole-SI mode: read a .docx (or pasted section), split into compounds, check each, report.
-import { runChecks, splitEntries, splitParagraphs, locate, formatFormula, readDocx, annotateDocx, commentsForEntry, recurringIssues, prettyIons } from './core/index.js';
+import { runChecks, splitEntries, splitParagraphs, locate, formatFormula, readDocx, annotateDocx, commentsForEntry, recurringIssues, prettyIons, expandAbbreviations } from './core/index.js';
 import { serverUrl } from './ocsr.js';
 
 const $ = id => document.getElementById(id);
@@ -51,10 +51,27 @@ function setSource(source, name) {
 async function lookupNames(names) {
   const url = serverUrl();
   if (!url) return { error: 'No structure server is set (see "Structure server" above).' };
-  try {
-    const r = await fetch(`${url}/names`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ names }) });
+  const call = async (list) => {
+    const r = await fetch(`${url}/names`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ names: list }) });
     if (!r.ok) throw new Error(r.statusText);
-    return { results: (await r.json()).results };
+    return (await r.json()).results;
+  };
+  try {
+    const results = await call(names);
+    // second pass: names OPSIN could not read, with abbreviations expanded (OTf, OMe, CF3, Bpin, ...)
+    const retry = [];
+    results.forEach((res, i) => {
+      if (res.smiles || !names[i]) return;
+      const ex = expandAbbreviations(names[i]);
+      if (ex.used.length && ex.name !== names[i]) retry.push({ i, ex });
+    });
+    if (retry.length) {
+      const second = await call(retry.map(r => r.ex.name));
+      second.forEach((res, k) => {
+        if (res.smiles) results[retry[k].i] = { ...res, name: names[retry[k].i], expanded: retry[k].ex };
+      });
+    }
+    return { results };
   } catch {
     return { error: 'Could not reach the structure server. A sleeping Hugging Face Space can take a minute to start: try again.' };
   }
@@ -81,6 +98,12 @@ async function runAll(getRDKit) {
     let source;
     if (smiles && r.structure) {
       source = { cls: 'good', text: `From name · ${formatFormula(r.compound)}` };
+      if (nm.expanded) {
+        source.text += ' (abbreviations expanded)';
+        r.findings.unshift({ level: 'info', section: 'Structure', fyi: true,
+          title: `Name read after expanding abbreviations: ${nm.expanded.used.map(([a, b]) => `${a} → ${b.replace(/^\((.*)\)$/, '$1')}`).join(', ')}`,
+          detail: `Interpreted as "${nm.expanded.name}". Check that this is the intended compound.` });
+      }
     } else if (nm && e.name && nm.error) {
       source = { cls: 'warn', text: 'Name not readable' };
       r.findings.unshift({ level: 'warning', section: 'Structure', title: 'The compound name could not be interpreted',

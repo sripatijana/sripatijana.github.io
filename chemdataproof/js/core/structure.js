@@ -1,6 +1,8 @@
 // Structure analysis on top of RDKit.js (MinimalLib).
 // Takes an initialised RDKit module so it works both in the browser and in Node tests.
 
+import { findExchangeable } from './exchangeable.js';
+
 const SYMBOLS = ['', 'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar',
   'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr',
   'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce',
@@ -133,6 +135,9 @@ export function analyzeSmiles(RDKit, smiles) {
     const phosphorusEnv = envOf(n => n.el === 'P');
     const protonEnv = envOf(n => n.hH > 0).map(g => ({ ...g, onHetero: g.el !== 'C' }));
     const exchangeableH = graph.keep.filter(n => ['O', 'N', 'S'].includes(n.el)).reduce((s, n) => s + n.hH, 0);
+    const hMap = new Map(graph.keep.filter(n => n.hH > 0).map(n => [n.idx, { h: n.hH, hetero: ['O', 'N', 'S'].includes(n.el) }]));
+    let exchangeable = [];
+    try { exchangeable = findExchangeable(RDKit, mol, hMap); } catch { /* older RDKit.js without SMARTS support */ }
     const components = fragmentComponents(graph);
     const fragments = components.length;
     const ch2Count = graph.keep.filter(n => n.el === 'C' && n.hH === 2).length;
@@ -141,7 +146,7 @@ export function analyzeSmiles(RDKit, smiles) {
     try { svg = mol.get_svg(320, 220); } catch { /* ignore */ }
     return {
       smiles: mol.get_smiles(), formula, charge, radicals, carbonEnv, fluorineEnv, phosphorusEnv,
-      protonEnv, exchangeableH, fragments, components, hasStereo, ch2Count, svg, carbonEnvMax,
+      protonEnv, exchangeableH, exchangeable, fragments, components, hasStereo, ch2Count, svg, carbonEnvMax,
       stereoCenters: stereoTags,
     };
   } finally {
