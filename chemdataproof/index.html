@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ChemDataProof · consistency checker for NMR and HRMS data</title>
+  <meta name="description" content="Paste a structure and its characterisation data. ChemDataProof checks proton counts, coupling constants, 13C peak counts and HRMS values. Runs entirely in your browser.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Cpolygon points=%2216,3 27,9.5 27,22.5 16,29 5,22.5 5,9.5%22 fill=%22none%22 stroke=%22%231f6f5c%22 stroke-width=%223%22/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <h1>ChemDataProof</h1>
+      <p class="tag">Proofreading for characterisation data in SIs, manuscripts and theses: NMR and HRMS consistency checks</p>
+      <p class="privacy">Your text, Word files and all checks stay in your browser. Only images and compound names go to the structure server you choose, which can run on your own computer.</p>
+    </div>
+  </header>
+
+  <div class="wrap bar">
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="single" role="tab">Single compound</button>
+      <button class="tab" data-tab="batch" role="tab">Whole SI file (.docx)</button>
+    </nav>
+    <details class="settings">
+      <summary>Structure server (image and name recognition)</summary>
+      <div class="row">
+        <input id="ocsr-url" type="text" spellcheck="false" placeholder="https://your-name-chemdataproof-server.hf.space">
+        <button id="ocsr-test" class="ghost small">Test</button>
+      </div>
+      <p id="ocsr-test-msg" class="hint">Use your Hugging Face Space, or http://localhost:7860 if you run the server on your own computer (see README).</p>
+    </details>
+  </div>
+
+  <main id="tab-single" class="wrap grid">
+    <section class="panel input">
+      <label>Structure from an image <span class="opt">(optional)</span></label>
+      <div id="drop" class="drop" tabindex="0" role="button" aria-label="Add a structure image">
+        <strong>Drop an image here, paste a screenshot (Ctrl/⌘+V) or click to choose</strong>
+        <span>A full SI page is fine: you can select the structure in the next step.</span>
+        <input id="file" type="file" accept="image/*" hidden>
+      </div>
+      <div id="cropper" class="cropper" hidden>
+        <p class="hint">If the image shows more than the structure (title, text, scheme), drag a box around the molecule.</p>
+        <div class="crop-stage"><img id="crop-img" alt="Uploaded image" draggable="false"><div id="crop-box" hidden></div></div>
+        <div class="row">
+          <button id="crop-go" class="primary small" disabled>Recognise selection</button>
+          <button id="crop-all" class="ghost small">Use whole image</button>
+          <button id="crop-cancel" class="ghost small">Cancel</button>
+        </div>
+      </div>
+      <div id="ocsr" class="ocsr" hidden>
+        <div class="compare">
+          <figure><div class="frame"><img id="ocsr-img" alt="Your image"></div><figcaption>Your image · <a href="#" id="crop-again">change selection</a></figcaption></figure>
+          <figure><div class="frame" id="ocsr-svg"></div><figcaption id="ocsr-cap">Recognised structure</figcaption></figure>
+        </div>
+        <div id="ocsr-msg" class="ocsr-msg"></div>
+        <label class="confirm"><input type="checkbox" id="ocsr-ok"> Both drawings match, including stereochemistry and every label</label>
+      </div>
+
+      <label for="name">Compound name <span class="opt">(filled in from the first line of your entry)</span></label>
+      <div class="row tight">
+        <input id="name" type="text" spellcheck="false" placeholder="e.g. 4-phenylbutanoic acid">
+        <button id="name-go" class="ghost small">Structure from name</button>
+      </div>
+      <p id="name-msg" class="hint"></p>
+
+      <label for="smiles">Structure (SMILES)</label>
+      <input id="smiles" type="text" spellcheck="false" placeholder="e.g. C[C@H](O)c1ccc(cc1)C(F)(F)F">
+      <p class="hint">In ChemDraw: select the structure → Edit → Copy As → SMILES.</p>
+
+      <label for="formula">or molecular formula <span class="opt">(optional)</span></label>
+      <input id="formula" type="text" spellcheck="false" placeholder="e.g. C9H9F3O">
+
+      <label for="data">Characterisation data <span class="opt">(paste the whole entry, title line included)</span></label>
+      <textarea id="data" spellcheck="false" rows="12" placeholder="1H NMR (400 MHz, CDCl3) δ 7.60 (d, J = 8.1 Hz, 2H), ... 13C NMR (101 MHz, CDCl3) δ ... HRMS (ESI) m/z: [M+Na]+ calcd for ... ; found ..."></textarea>
+
+      <div class="row">
+        <label class="inline" for="ppm">HRMS tolerance
+          <input id="ppm" type="number" min="0.5" max="50" step="0.5" value="5"> ppm
+        </label>
+        <label class="inline" for="jtol">J match
+          <input id="jtol" type="number" min="0.1" max="2" step="0.1" value="0.3"> Hz
+        </label>
+      </div>
+
+      <div class="row buttons">
+        <button id="run" class="primary">Check data</button>
+        <button id="ex-good" class="ghost">Example: clean</button>
+        <button id="ex-bad" class="ghost">Example: with mistakes</button>
+      </div>
+      <p id="status" class="status">Loading RDKit…</p>
+    </section>
+
+    <section class="panel output">
+      <div id="structure" class="structure empty">Structure will appear here</div>
+      <div id="summary" class="summary"></div>
+      <div class="filters">
+        <label><input type="checkbox" id="show-ok" checked> passed</label>
+        <label><input type="checkbox" id="show-info" checked> notes</label>
+        <button id="copy" class="ghost small" disabled>Copy report</button>
+      </div>
+      <div id="results" class="results"></div>
+    </section>
+  </main>
+
+  <main id="tab-batch" class="wrap batch" hidden>
+    <section class="panel">
+      <div id="bdrop" class="drop" tabindex="0" role="button" aria-label="Choose a Word file">
+        <strong>Drop your Word file (.docx) here or click to choose</strong>
+        <span>The whole characterisation part is fine; procedures and references are skipped. Old .doc files: save as .docx first.</span>
+        <input id="bfile" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+      </div>
+      <details class="paste">
+        <summary>…or paste the text of the whole section</summary>
+        <textarea id="btext" rows="10" spellcheck="false" placeholder="Compound name (1a)&#10;1H NMR (400 MHz, CDCl3) δ ...&#10;&#10;Compound name (1b)&#10;..."></textarea>
+      </details>
+      <div class="row">
+        <label class="inline"><input type="checkbox" id="buse-names" checked> Get each structure from its name (needs the structure server)</label>
+      </div>
+      <div class="row buttons">
+        <button id="brun" class="primary" disabled>Check all compounds</button>
+        <span id="bstatus" class="status">No file loaded.</span>
+      </div>
+      <p class="hint">Structures drawn inside Word (ChemDraw objects) are not read: each compound's name is used instead. If a name can't be read, the H count is checked against the formula from its HRMS line.</p>
+    </section>
+
+    <section class="panel" id="bresults" hidden>
+      <div id="bsummary" class="bsummary"></div>
+      <div class="filters">
+        <label><input type="checkbox" id="bshow-ok"> passed</label>
+        <label><input type="checkbox" id="bshow-info" checked> notes</label>
+        <span class="spacer"></span>
+        <button id="bcsv" class="ghost small">Download CSV</button>
+        <button id="bhtml" class="ghost small">Download report</button>
+      </div>
+      <table class="btable">
+        <thead><tr><th>#</th><th>Compound</th><th>Structure</th><th class="n">Errors</th><th class="n">To check</th><th class="n">Notes</th><th></th></tr></thead>
+        <tbody id="btbody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>Checks internal consistency only: it cannot tell whether a structure or a spectrum is correct.
+      Findings marked as notes are often fine; use your judgement.</p>
+    <p>Open source (MIT). Built with <a href="https://www.rdkit.org/">RDKit.js</a>, <a href="https://github.com/thomas0809/MolScribe">MolScribe</a> and <a href="https://github.com/dan2097/opsin">OPSIN</a>.
+      <a href="https://github.com/sripatijana/chemdataproof">Source and issues on GitHub</a>.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@rdkit/rdkit@2026.9.2/dist/RDKit_minimal.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
