@@ -130,7 +130,11 @@ function checkProton(h, compound, struct, opt, add) {
     h = { ...h, signals: parseProtonData(h.data.replace(/(?<![\d.,])(\d{1,2}),(\d{2})(?![\d.])/g, '$1.$2')) };
   }
   const sig = h.signals;
-  if (!sig.length) { add('warning', S, 'No signals could be read', 'Expected entries like "7.26 (d, J = 8.0 Hz, 2H)".'); return; }
+  if (!sig.length) {
+    if (!/\d/.test(h.data)) add('warning', S, 'The ¹H NMR heading has no data after it', 'Only the heading was found. The peak list may not have been copied (e.g. it sits in a table or text box), or the entry is still empty.');
+    else add('warning', S, 'No signals could be read', 'Expected entries like "7.26 (d, J = 8.0 Hz, 2H)".');
+    return;
+  }
 
   // Integrations
   const noInt = sig.filter(s => s.nH === null);
@@ -216,7 +220,11 @@ function checkProton(h, compound, struct, opt, add) {
 function checkCarbon(c, compound, struct, add) {
   const S = '13C NMR';
   const pk = c.peaks;
-  if (!pk.length) { add('warning', S, 'No peaks could be read'); return; }
+  if (!pk.length) {
+    if (!/\d/.test(c.data)) add('warning', S, 'The ¹³C NMR heading has no data after it', 'Only the heading was found. The peak list may not have been copied, or the entry is still empty.');
+    else add('warning', S, 'No peaks could be read');
+    return;
+  }
   const hasF = compound && (compound.F || 0) > 0;
   const hasP = compound && (compound.P || 0) > 0;
 
