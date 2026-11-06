@@ -1,4 +1,5 @@
 // Split a whole characterisation section (from a .docx or pasted text) into one entry per compound.
+// Positions are kept so that findings can later be anchored to the exact text in the Word file.
 import { normalize } from './parse.js';
 
 const DATA_RE = /(1H|13C|19F|31P|11B)\s*(?:\{[^}]*\})?\s*-?\s*NMR|\bHR-?MS\b|\bHRESIMS\b/;
@@ -42,36 +43,67 @@ export function extractName(text) {
 }
 
 /**
- * Split text into compound entries.
- * A title is a short, non-sentence paragraph; it starts an entry once data (NMR/HRMS) follows it.
- * Returns [{ title, name, label, text, index }].
+ * Split paragraphs into compound entries.
+ * @param {string[]} paras paragraph texts (one per Word paragraph or text line)
+ * @returns entries: { index, title, name, label, text, title_loc: {para, offset, length} | null,
+ *                     parts: [{ para, offset, length, start }] }  (start = position in entry.text)
  */
-export function splitEntries(rawText) {
-  const paras = normalize(rawText).split(/\n\s*\n|\n(?=\s*\S)/).map(p => p.trim()).filter(Boolean);
+export function splitParagraphs(paras) {
   const entries = [];
-  let pending = null;   // last title candidate not yet used
+  let pending = null;   // { text, para, offset }
   let cur = null;
-  for (const p of paras) {
+  paras.forEach((raw, pi) => {
+    const norm = normalize(raw);
+    const lead = norm.length - norm.trimStart().length;
+    const p = norm.trim();
+    if (!p) return;
     if (DATA_RE.test(p)) {
-      // "Name (1a): 1H NMR ..." in one paragraph
       const idx = p.search(DATA_RE);
       const prefix = p.slice(0, idx).replace(/[:\s]+$/, '');
-      if (prefix && isTitle(prefix)) { pending = prefix; }
-      const data = prefix && pending === prefix ? p.slice(idx) : p;
+      let dataOffset = lead;
+      if (prefix && isTitle(prefix)) {
+        pending = { text: prefix, para: pi, offset: lead };
+        dataOffset = lead + idx;
+      }
       if (pending !== null || !cur) {
-        const t = pending ? cleanTitle(pending) : { name: '', label: '' };
-        cur = { title: pending || '', name: t.name, label: t.label, parts: [] };
+        const t = pending ? cleanTitle(pending.text) : { name: '', label: '' };
+        cur = {
+          title: pending ? pending.text : '', name: t.name, label: t.label,
+          title_loc: pending ? { para: pending.para, offset: pending.offset, length: pending.text.length } : null,
+          parts: [],
+        };
         entries.push(cur);
         pending = null;
       }
-      cur.parts.push(data);
+      cur.parts.push({ para: pi, offset: dataOffset, text: norm.slice(dataOffset).trimEnd() });
     } else if (isTitle(p)) {
-      pending = p;
+      pending = { text: p, para: pi, offset: lead };
     }
-    // other prose (procedures, yields) is ignored
-  }
-  return entries.map((e, i) => ({
-    index: i + 1, title: e.title, name: e.name, label: e.label,
-    text: e.parts.join('\n'),
-  }));
+  });
+  return entries.map((e, i) => {
+    let pos = 0;
+    const parts = e.parts.map(pt => {
+      const out = { para: pt.para, offset: pt.offset, length: pt.text.length, start: pos };
+      pos += pt.text.length + 1;
+      return out;
+    });
+    return {
+      index: i + 1, title: e.title, name: e.name, label: e.label, title_loc: e.title_loc,
+      text: e.parts.map(p => p.text).join('\n'), parts,
+    };
+  });
+}
+
+/** Split plain text (pasted, or raw text of a document) into compound entries. */
+export function splitEntries(rawText) {
+  return splitParagraphs(String(rawText || '').replace(/\r\n?/g, '\n').split('\n'));
+}
+
+/** Map a [start, end) range in entry.text to a paragraph range (clamped to one paragraph). */
+export function locate(entry, start, end) {
+  const part = entry.parts.find(p => start >= p.start && start <= p.start + p.length) || entry.parts[0];
+  if (!part) return null;
+  const s = Math.max(0, start - part.start);
+  const e = Math.min(part.length, Math.max(s + 1, end - part.start));
+  return { para: part.para, start: part.offset + s, end: part.offset + e };
 }

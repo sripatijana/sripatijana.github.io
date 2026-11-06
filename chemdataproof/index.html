@@ -108,7 +108,7 @@
     <section class="panel">
       <div id="bdrop" class="drop" tabindex="0" role="button" aria-label="Choose a Word file">
         <strong>Drop your Word file (.docx) here or click to choose</strong>
-        <span>The whole characterisation part is fine; procedures and references are skipped. Old .doc files: save as .docx first.</span>
+        <span>The whole characterisation part is fine; procedures and references are skipped. You can get the file back with comments. Old .doc files: save as .docx first.</span>
         <input id="bfile" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
       </div>
       <details class="paste">
@@ -127,6 +127,11 @@
 
     <section class="panel" id="bresults" hidden>
       <div id="bsummary" class="bsummary"></div>
+      <div id="bdocx-row" class="docx-row" hidden>
+        <button id="bdocx" class="primary">Download Word file with comments</button>
+        <label class="inline"><input type="checkbox" id="bdocx-notes" checked> include minor points</label>
+        <span class="hint">Your original file, unchanged, with a margin comment on each problem.</span>
+      </div>
       <div class="filters">
         <label><input type="checkbox" id="bshow-ok"> passed</label>
         <label><input type="checkbox" id="bshow-info" checked> notes</label>

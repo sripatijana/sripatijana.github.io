@@ -2,7 +2,7 @@ import { runChecks, formatFormula, monoisotopicMass } from './core/index.js';
 import { EXAMPLES } from './examples.js';
 import { setupOcsr, imageState } from './ocsr.js';
 import { setupName, resolveName, nameState } from './name.js';
-import { setupBatch } from './batch.js';
+import { setupBatch, opsinReason } from './batch.js';
 
 const $ = id => document.getElementById(id);
 let RDKit = null;
@@ -59,7 +59,7 @@ async function run() {
       detail: 'Add the drawing (image or SMILES) as well to check that name and structure agree.' });
   } else if (input.name && nameState.error && nameState.error !== 'no server' && nameState.error !== 'server unreachable') {
     last.findings.unshift({ level: 'warning', section: 'Structure', title: 'The compound name could not be interpreted',
-      detail: `OPSIN: ${nameState.error} Check the name for typos, or ignore this for trivial names and abbreviations.` });
+      detail: `${opsinReason(nameState.error)} Check the name for typos, or ignore this for trivial names and abbreviations.` });
   }
   if (smilesSource === 'image' && imageState.active && !imageState.confirmed && input.smiles.trim()) {
     last.findings.unshift({ level: 'warning', section: 'Structure', title: 'Structure from the image is not confirmed yet',

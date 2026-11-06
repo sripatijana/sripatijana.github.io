@@ -37,7 +37,7 @@ export function segment(text) {
   for (let i = 0; i < hits.length; i++) {
     const h = hits[i];
     const end = i + 1 < hits.length ? hits[i + 1].start : t.length;
-    sections.push({ type: h.type, label: h.label, header: t.slice(h.headerEnd, end), raw: t.slice(h.start, end) });
+    sections.push({ type: h.type, label: h.label, header: t.slice(h.headerEnd, end), raw: t.slice(h.start, end), start: h.start, end });
   }
   return sections;
 }

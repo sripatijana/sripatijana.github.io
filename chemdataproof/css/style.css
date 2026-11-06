@@ -152,3 +152,5 @@ details.paste textarea { margin-top: 6px; min-height: 160px; }
 .btable tr.detail td { background: var(--bg); padding: 10px 12px 12px 40px; }
 .btable tr.detail ul { list-style: none; margin: 0; padding: 0; }
 .btable tr.detail .smi { font: 12px var(--mono); color: var(--muted); margin-bottom: 6px; word-break: break-all; }
+.docx-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 4px 0 12px; padding: 10px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
+.docx-row .hint { margin: 0; }

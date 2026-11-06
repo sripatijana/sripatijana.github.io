@@ -22,7 +22,7 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 export function runChecks(input, RDKit = null) {
   const opt = { ...DEFAULTS, ...(input.options || {}) };
   const F = [];
-  const add = (level, section, title, detail = '') => F.push({ level, section, title, detail });
+  const add = (level, section, title, detail = '', extra = {}) => F.push({ level, section, title, detail, ...extra });
 
   // ---------- Structure ----------
   let struct = null, compound = null;
@@ -104,7 +104,7 @@ export function runChecks(input, RDKit = null) {
         if (Object.values(f).every(v => v > 0) && f.C) {
           compound = f; fromHRMS = true;
           add('info', 'Structure', `No structure given: using ${formatFormula(f)} from the HRMS ion formula`,
-            'The H count is checked against this formula. Give a structure or name for the full checks.');
+            'The H count is checked against this formula. Give a structure or name for the full checks.', { fyi: true });
           break;
         }
       } catch { /* unreadable formula */ }
@@ -118,7 +118,7 @@ export function runChecks(input, RDKit = null) {
   for (const m of parsed.HRMS) checkHRMS(m, fromHRMS ? null : compound, struct, opt, add);
   checkCrossSection(parsed, add);
 
-  return { findings: F, structure: struct, compound, compoundFromHRMS: fromHRMS, parsed };
+  return { findings: F, structure: struct, compound, compoundFromHRMS: fromHRMS, parsed, sections };
 }
 
 // ---------- ¹H ----------
@@ -126,7 +126,7 @@ function checkProton(h, compound, struct, opt, add) {
   const S = '1H NMR';
   const commas = h.data.match(/(?<![\d.,])\d{1,2},\d{2}(?![\d.])/g);
   if (commas) {
-    add('error', S, `Decimal comma instead of a point: ${commas.join(', ')}`, 'Probably a typo; it was read as a decimal point for the other checks.');
+    add('error', S, `Decimal comma instead of a point: ${commas.join(', ')}`, 'Probably a typo; it was read as a decimal point for the other checks.', { anchor: commas[0] });
     h = { ...h, signals: parseProtonData(h.data.replace(/(?<![\d.,])(\d{1,2}),(\d{2})(?![\d.])/g, '$1.$2')) };
   }
   const sig = h.signals;
@@ -138,7 +138,7 @@ function checkProton(h, compound, struct, opt, add) {
 
   // Integrations
   const noInt = sig.filter(s => s.nH === null);
-  if (noInt.length) add('warning', S, `${plural(noInt.length, 'signal')} without an integration`, noInt.map(s => s.raw).join('; '));
+  if (noInt.length) add('warning', S, `${plural(noInt.length, 'signal')} without an integration`, noInt.map(s => s.raw).join('; '), { anchor: noInt[0].raw });
   const sum = sig.reduce((a, s) => a + (s.nH || 0), 0);
   if (compound) {
     const expH = compound.H || 0;
@@ -147,7 +147,7 @@ function checkProton(h, compound, struct, opt, add) {
     if (diff === 0) add('ok', S, `Integrations sum to ${sum} H, matching the formula`);
     else if (diff > 0 && exch !== null && diff <= exch) {
       add('info', S, `Integrations sum to ${sum} H; formula has ${expH} H`,
-        `The ${plural(diff, 'missing proton')} could be OH/NH/SH (${exch} exchangeable in the structure). Fine if not observed, but consider stating it.`);
+        `The ${plural(diff, 'missing proton')} could be OH/NH/SH (${exch} exchangeable in the structure). Fine if not observed, but consider stating it.`, { fyi: true });
     } else {
       add('error', S, `Integrations sum to ${sum} H, but the formula has ${expH} H`,
         diff > 0 ? `${plural(diff, 'proton')} missing.` : `${plural(-diff, 'proton')} too many.`);
@@ -160,18 +160,18 @@ function checkProton(h, compound, struct, opt, add) {
     const n = s.J.length;
     if (k === null) continue;
     if (k === 0 && n > 0) {
-      if (s.code === 's') add('warning', S, `Singlet with a coupling constant at δ ${s.shiftRaw.join('-')}`, s.raw);
-      else add('info', S, `Multiplet with a J value at δ ${s.shiftRaw.join('-')}`, `${s.raw}. Usually "m" is given without J; use a defined multiplicity if J was measured.`);
+      if (s.code === 's') add('warning', S, `Singlet with a coupling constant at δ ${s.shiftRaw.join('-')}`, s.raw, { anchor: s.raw });
+      else add('info', S, `Multiplet with a J value at δ ${s.shiftRaw.join('-')}`, `${s.raw}. Usually "m" is given without J; use a defined multiplicity if J was measured.`, { anchor: s.raw });
     } else if (k > 0 && n === 0) {
-      add('error', S, `"${s.code}" without a coupling constant at δ ${s.shiftRaw.join('-')}`, s.raw);
+      add('error', S, `"${s.code}" without a coupling constant at δ ${s.shiftRaw.join('-')}`, s.raw, { anchor: s.raw });
     } else if (k > 0 && n !== k) {
-      add('warning', S, `"${s.code}" needs ${plural(k, 'J value')}, ${n} given at δ ${s.shiftRaw.join('-')}`, s.raw);
+      add('warning', S, `"${s.code}" needs ${plural(k, 'J value')}, ${n} given at δ ${s.shiftRaw.join('-')}`, s.raw, { anchor: s.raw });
     }
     if (s.code && /^d+$/.test(s.code) && n === k && k > 1) {
       const vals = s.J.map(j => j.value);
       for (let i = 0; i < vals.length; i++) for (let j = i + 1; j < vals.length; j++) {
         if (Math.abs(vals[i] - vals[j]) < 0.05) {
-          add('info', S, `"${s.code}" with two identical J values at δ ${s.shiftRaw.join('-')}`, `${s.raw}. Two equal couplings normally appear as a triplet-type pattern.`);
+          add('info', S, `"${s.code}" with two identical J values at δ ${s.shiftRaw.join('-')}`, `${s.raw}. Two equal couplings normally appear as a triplet-type pattern.`, { anchor: s.raw });
           i = vals.length; break;
         }
       }
@@ -190,20 +190,20 @@ function checkProton(h, compound, struct, opt, add) {
       lonely.map(l => `J = ${l.raw} Hz at δ ${l.s.shiftRaw.join('-')}`).join('; ') +
       (sig.some(x => x.code === 'm' || x.code === null)
         ? '. Probably the partners are reported as multiplets'
-        : '. No multiplets to explain it') + (hasF || hasP ? ', or the coupling is to ' + [hasF && '¹⁹F', hasP && '³¹P'].filter(Boolean).join('/') : '') + '. Worth a quick look for typos.');
+        : '. No multiplets to explain it') + (hasF || hasP ? ', or the coupling is to ' + [hasF && '¹⁹F', hasP && '³¹P'].filter(Boolean).join('/') : '') + '. Worth a quick look for typos.', { anchor: lonely[0].s.raw, fyi: sig.some(x => x.code === 'm' || x.code === null) });
   }
 
   // Order, ranges, decimals, plausibility
   const firsts = sig.map(s => Math.max(s.shift, s.shiftEnd ?? -Infinity));
   if (firsts.some((v, i) => i > 0 && v > firsts[i - 1] + 1e-9)) add('info', S, 'Signals are not listed in descending order of shift');
   const lowHigh = sig.filter(s => s.shiftEnd !== null && s.shiftEnd > s.shift);
-  if (lowHigh.length) add('info', S, `${plural(lowHigh.length, 'range')} written low-to-high`, lowHigh.map(s => s.shiftRaw.join('-')).join(', ') + '. Most journals list ranges high-to-low, consistent with the listing order.');
+  if (lowHigh.length) add('info', S, `${plural(lowHigh.length, 'range')} written low-to-high`, lowHigh.map(s => s.shiftRaw.join('-')).join(', ') + '. Most journals list ranges high-to-low, consistent with the listing order.', { anchor: lowHigh[0].raw });
   const badDec = sig.flatMap(s => s.shiftRaw).filter(r => decimalsOf(r) !== 2);
-  if (badDec.length) add('info', S, `${plural(badDec.length, 'shift')} not given to two decimals`, badDec.join(', '));
+  if (badDec.length) add('info', S, `${plural(badDec.length, 'shift')} not given to two decimals`, badDec.join(', '), { anchor: badDec[0] });
   const badJ = sig.flatMap(s => s.J).filter(j => decimalsOf(j.raw) !== 1);
-  if (badJ.length) add('info', S, `${plural(badJ.length, 'J value')} not given to one decimal`, badJ.map(j => j.raw).join(', '));
+  if (badJ.length) add('info', S, `${plural(badJ.length, 'J value')} not given to one decimal`, badJ.map(j => j.raw).join(', '), { anchor: badJ[0].raw });
   const odd = sig.filter(s => s.shift < -1 || s.shift > 16);
-  if (odd.length) add('warning', S, 'Shift outside the usual ¹H range (−1 to 16 ppm)', odd.map(s => s.raw).join('; '));
+  if (odd.length) add('warning', S, 'Shift outside the usual ¹H range (−1 to 16 ppm)', odd.map(s => s.raw).join('; '), { anchor: odd[0].raw });
 
   // Environments (information only)
   if (struct) {
@@ -212,7 +212,7 @@ function checkProton(h, compound, struct, opt, add) {
     let detail = `Constitutionally distinct H environments: ${env}${hetero ? ` (${hetero} on O/N/S)` : ''}. Expected integrations by symmetry: ${struct.protonEnv.map(g => g.nH).sort((a, b) => b - a).join(', ')}.`;
     if ((struct.stereoCenters > 0 || struct.hasStereo) && struct.ch2Count > 0) detail += ' The structure is stereogenic, so CH₂ protons may be diastereotopic and give extra signals.';
     detail += ' Overlap reduces, and diastereotopicity increases, the observed count; this is for orientation only.';
-    add('info', S, `${plural(sig.length, 'signal')} reported, ${env} H environments in the structure`, detail);
+    add('info', S, `${plural(sig.length, 'signal')} reported, ${env} H environments in the structure`, detail, { fyi: true });
   }
 }
 
@@ -257,12 +257,12 @@ function checkCarbon(c, compound, struct, add) {
   const seen = new Map();
   for (const p of pk) { const k = p.shiftRaw[0]; seen.set(k, (seen.get(k) || 0) + 1); }
   const dups = [...seen].filter(([, v]) => v > 1).map(([k]) => k);
-  if (dups.length) add('warning', S, `Same shift listed more than once: ${dups.join(', ')}`, 'Possible copy-paste duplicate. If two carbons coincide, list once and annotate "(2C)".');
+  if (dups.length) add('warning', S, `Same shift listed more than once: ${dups.join(', ')}`, 'Possible copy-paste duplicate. If two carbons coincide, list once and annotate "(2C)".', { anchor: dups[0] });
 
   const shifts = pk.map(p => p.shift);
   if (shifts.some((v, i) => i > 0 && v > shifts[i - 1] + 1e-9)) add('info', S, 'Peaks are not listed in descending order of shift');
   const odd = pk.filter(p => p.shift < -10 || p.shift > 240);
-  if (odd.length) add('warning', S, 'Shift outside the usual ¹³C range (−10 to 240 ppm)', odd.map(p => p.raw).join('; '));
+  if (odd.length) add('warning', S, 'Shift outside the usual ¹³C range (−10 to 240 ppm)', odd.map(p => p.raw).join('; '), { anchor: odd[0].shiftRaw[0] });
   const decs = new Set(pk.map(p => decimalsOf(p.shiftRaw[0])));
   if (decs.size > 1) {
     const maxDec = Math.max(...decs);
@@ -276,7 +276,7 @@ function checkCarbon(c, compound, struct, add) {
     if (!coupled.length) add('info', S, 'The compound contains fluorine but no C–F couplings are reported', 'Carbons near F usually appear as d/q with J(C–F); journals expect these to be given.');
     for (const p of pk) {
       if (p.code === 'q' && p.J.length && hasF && (compound.F || 0) < 3) {
-        add('warning', S, `Quartet at δ ${p.shiftRaw[0]} but fewer than three F atoms in the formula`, p.raw);
+        add('warning', S, `Quartet at δ ${p.shiftRaw[0]} but fewer than three F atoms in the formula`, p.raw, { anchor: p.shiftRaw[0] });
       }
     }
   }
@@ -296,8 +296,19 @@ function checkHetero(sec, S, el, env, compound, add) {
 }
 
 // ---------- HRMS ----------
-function checkHRMS(m, compound, struct, opt, add) {
+function checkHRMS(m, compound, struct, opt, addRaw) {
   const S = 'HRMS';
+  // anchor each HRMS finding at the most specific text: label, formula, calc or found value
+  const add = (level, sec, title, detail = '', extra = {}) => {
+    let anchor = extra.anchor;
+    if (!anchor) {
+      if (/label|Ion type|ion label/i.test(title) && m.adductRaw) anchor = m.adductRaw;
+      else if (/formula/i.test(title) && m.formulaRaw) anchor = m.formulaRaw;
+      else if (/^Calculated|calculated value fits|isotopologue/i.test(title) && m.calcRaw) anchor = m.calcRaw;
+      else if (/^Found/i.test(title) && m.foundRaw) anchor = m.foundRaw;
+    }
+    addRaw(level, sec, title, detail, { ...extra, ...(anchor ? { anchor } : {}) });
+  };
   if (!m.formulaRaw) add('warning', S, 'No ion formula found', 'Expected e.g. "calcd for C10H13O2 [M+H]+".');
   if (m.calc === null) add('warning', S, 'No calculated m/z found');
   if (m.found === null) add('warning', S, 'No found m/z found');
@@ -342,7 +353,7 @@ function checkHRMS(m, compound, struct, opt, add) {
           if (Math.sign(z) === otherSign) {
             // Only the label is wrong: formula, calc and found are judged against the written ion.
             expectedIon = ion;
-            add('error', S, `Ion label ${adduct.label} should be ${other}`, `The formula ${formatFormula(ion)} is the compound as ${other}. Correct the label; the m/z values are checked for ${other} below.`);
+            add('error', S, `Ion label ${adduct.label} should be ${other}`, `The formula ${formatFormula(ion)} is the compound as ${other}. Correct the label; the calculated and found values were checked against ${other}.`);
           } else {
             add('error', S, `Ion formula ${formatFormula(ion)} corresponds to ${other}, but the label says ${adduct.label}`, `For ${adduct.label} expected ${exp}.`);
           }
@@ -416,7 +427,7 @@ function checkCrossSection(parsed, add) {
       if (sec && sec.freq) {
         const exp = H.freq * ratio[k];
         if (Math.abs(sec.freq - exp) / exp > 0.03) {
-          add('warning', 'General', `${name} frequency ${sec.freq} MHz does not fit ¹H at ${H.freq} MHz`, `Expected about ${Math.round(exp)} MHz on the same spectrometer. Fine if a different instrument was used.`);
+          add('warning', 'General', `${name} frequency ${sec.freq} MHz does not fit ¹H at ${H.freq} MHz`, `Expected about ${Math.round(exp)} MHz on the same spectrometer. Fine if a different instrument was used.`, { anchorSection: name, anchor: String(sec.freq) });
         }
       }
     }
@@ -426,6 +437,7 @@ function checkCrossSection(parsed, add) {
     'acetonitrile-d3': 'cd3cn', 'cd3cn': 'cd3cn', 'deuteriumoxide': 'd2o', 'd2o': 'd2o', 'dichloromethane-d2': 'cd2cl2', 'cd2cl2': 'cd2cl2' };
   const raw = [H, C, Fl, parsed.P[0]].filter(x => x && x.solvent).map(x => x.solvent.trim());
   const key = r => { const k = r.replace(/\s/g, '').toLowerCase(); return SYN[k] || k; };
-  if (new Set(raw.map(key)).size > 1) add('info', 'General', 'Different solvents across NMR experiments', `${[...new Set(raw)].join(' / ')}. Fine if intended; otherwise a copy-paste slip.`);
-  else if (new Set(raw).size > 1) add('info', 'General', `Same solvent written in different ways: ${[...new Set(raw)].join(' / ')}`, 'Use one notation throughout.');
+  const odd = raw.find(r => r !== raw[0]);
+  if (new Set(raw.map(key)).size > 1) add('info', 'General', 'Different solvents across NMR experiments', `${[...new Set(raw)].join(' / ')}. Fine if intended; otherwise a copy-paste slip.`, { anchor: odd });
+  else if (new Set(raw).size > 1) add('info', 'General', `Same solvent written in different ways: ${[...new Set(raw)].join(' / ')}`, 'Use one notation throughout.', { anchor: odd });
 }
