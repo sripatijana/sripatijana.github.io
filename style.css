@@ -1416,3 +1416,62 @@ body.dark-mode .contact-form textarea {
 }
 .back-to-top.visible { opacity: 1; pointer-events: auto; }
 .back-to-top:hover   { background: var(--navy); }
+
+/* ── Links page: logo grid ── */
+.link-hint { color: var(--muted); font-size: 0.85rem; margin-top: 0.4rem; }
+.link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 0.6rem;
+}
+.link-tile {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  padding: 0.9rem 0.4rem 0.75rem;
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--text);
+  transition: background 0.15s, transform 0.15s;
+}
+.link-tile:hover, .link-tile:focus-visible { background: var(--bg); transform: translateY(-2px); outline: none; }
+.link-logo {
+  position: relative;
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.link-logo.own { border: none; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+.link-logo.own svg { width: 100%; height: 100%; display: block; }
+.link-logo img { position: absolute; width: 32px; height: 32px; object-fit: contain; background: var(--white); border-radius: 4px; }
+.link-fallback {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700; font-size: 1rem; color: var(--accent);
+}
+.link-name {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 0.78rem; line-height: 1.25; text-align: center;
+  color: var(--text);
+}
+.link-desc {
+  position: absolute; z-index: 5;
+  top: calc(100% - 0.2rem); left: 50%; transform: translateX(-50%);
+  width: 220px; padding: 0.55rem 0.7rem;
+  background: var(--navy); color: #fff;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 0.78rem; line-height: 1.45; text-align: left;
+  border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  opacity: 0; visibility: hidden; transition: opacity 0.15s;
+  pointer-events: none;
+}
+.link-tile:hover .link-desc, .link-tile:focus-visible .link-desc { opacity: 1; visibility: visible; }
+body.dark-mode .link-desc { background: #2d3748; }
+body.dark-mode .link-logo img { background: #fff; }
+@media (max-width: 560px) {
+  .link-grid { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+  .link-logo { width: 46px; height: 46px; }
+  .link-desc { display: none; }
+}
