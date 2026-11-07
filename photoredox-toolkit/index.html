@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photoredox Toolkit — reference converter, excited-state potentials, photocatalysts and radical precursors</title>
+<meta name="description" content="Convert redox potentials between SCE, Fc+/Fc, NHE and Ag/AgCl, calculate excited-state potentials, look up photocatalysts and radical precursors with literature sources, and check electron-transfer feasibility.">
+<style>
+  :root{
+    --bg:#f7f7f5; --card:#ffffff; --ink:#1b1d21; --muted:#5d636e; --line:#e3e3df;
+    --accent:#3b5bdb; --accent-soft:#e8edff; --ox:#c2410c; --red:#1d4ed8; --warn-bg:#fff7e6; --warn:#8a5a00;
+    --good:#15803d; --mid:#b45309; --bad:#b91c1c;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
+  header{padding:28px 20px 8px;max-width:1240px;margin:0 auto}
+  header h1{margin:0;font-size:26px;letter-spacing:-.01em}
+  header p{margin:6px 0 0;color:var(--muted)}
+  nav{max-width:1240px;margin:14px auto 0;padding:0 20px;display:flex;gap:6px;flex-wrap:wrap}
+  nav button{border:1px solid var(--line);background:var(--card);padding:8px 14px;border-radius:999px;cursor:pointer;font:inherit;color:var(--ink)}
+  nav button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  main{max-width:1240px;margin:0 auto;padding:16px 20px 40px}
+  section{display:none}
+  section.active{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
+  h2{font-size:18px;margin:0 0 12px}
+  h3{font-size:15px;margin:18px 0 8px}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+  input,select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;width:100%}
+  input[type=number]{font-family:var(--mono)}
+  .row{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));align-items:end}
+  .result{font-family:var(--mono);font-size:22px;font-weight:600}
+  .big{font-size:28px}
+  .muted{color:var(--muted)}
+  .small{font-size:13px}
+  .note{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:13px;margin-top:12px}
+  .grid-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px}
+  .out{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fcfcfb}
+  .out .k{font-size:13px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);cursor:pointer;user-select:none;white-space:nowrap;position:sticky;top:0;background:var(--card)}
+  td.num{font-family:var(--mono);white-space:nowrap}
+  td.src{white-space:nowrap}
+  .ox{color:var(--ox)} .rd{color:var(--red)}
+  .pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin-left:4px;vertical-align:middle;white-space:nowrap}
+  .pill.rev{background:#eef6ee;color:#2f6b2f}
+  .pill.sec{background:#f3f0ff;color:#5b3fb5}
+  .pill.prov{background:#fdeceb;color:#a12d22}
+  .tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid var(--line);color:var(--muted);margin-left:4px}
+  a{color:var(--accent)}
+  .btn{border:1px solid var(--accent);color:var(--accent);background:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font:inherit;font-size:12px;white-space:nowrap}
+  .btn:hover{background:var(--accent-soft)}
+  .tablewrap{overflow-x:auto;max-height:75vh;overflow-y:auto;border:1px solid var(--line);border-radius:8px}
+  .conv-table td{font-family:var(--mono)}
+  .conv-table{border:1px solid var(--line)}
+  .dg{font-family:var(--mono);font-weight:600;white-space:nowrap}
+  .dg.good{color:var(--good)} .dg.mid{color:var(--mid)} .dg.bad{color:var(--bad)}
+  footer{max-width:1240px;margin:0 auto;padding:0 20px 40px;color:var(--muted);font-size:13px}
+  .sup{font-size:11px;vertical-align:super}
+  ol.refs li{margin-bottom:6px}
+  .legend span{margin-right:12px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Photoredox Toolkit</h1>
+  <p>Reference-electrode conversion, excited-state potentials, and sourced tables of photocatalysts and radical precursors, plus a quick check of whether electron transfer between them is favourable.</p>
+</header>
+<nav>
+  <button data-tab="conv" class="active">Reference converter</button>
+  <button data-tab="exc">Excited-state calculator</button>
+  <button data-tab="tbl">Photocatalysts</button>
+  <button data-tab="pre">Radical precursors</button>
+  <button data-tab="about">Sources &amp; caveats</button>
+</nav>
+
+<main>
+<!-- ================= CONVERTER ================= -->
+<section id="conv" class="active">
+  <div class="card">
+    <h2>Convert a potential between reference scales</h2>
+    <div class="row">
+      <div><label for="cv-E">Potential (V)</label><input id="cv-E" type="number" step="0.01" value="1.29"></div>
+      <div><label for="cv-from">Measured / reported vs</label><select id="cv-from"></select></div>
+      <div><label for="cv-to">Convert to</label><select id="cv-to"></select></div>
+      <div><label for="cv-solv">Solvent (sets Fc⁺/Fc vs SCE)</label><select id="cv-solv"></select></div>
+    </div>
+    <div style="margin-top:16px">
+      <span class="muted small">Result</span><br>
+      <span id="cv-out" class="result big">—</span>
+    </div>
+    <h3>Same potential on every scale</h3>
+    <div style="overflow-x:auto"><table class="conv-table" id="cv-all"></table></div>
+    <div class="note" id="cv-note"></div>
+  </div>
+</section>
+
+<!-- ================= EXCITED STATE ================= -->
+<section id="exc">
+  <div class="card">
+    <h2>Excited-state redox potentials from ground-state data and E<sub>0,0</sub></h2>
+    <div class="row">
+      <div><label for="ex-pick">Autofill from table (optional)</label><select id="ex-pick"><option value="">— enter your own values —</option></select></div>
+      <div><label for="ex-ref">Reference scale of your inputs</label><select id="ex-ref"></select></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div><label for="ex-ox">E<sub>1/2</sub>(PC<sup>•+</sup>/PC) (V)</label><input id="ex-ox" type="number" step="0.01" placeholder="e.g. 1.29"></div>
+      <div><label for="ex-red">E<sub>1/2</sub>(PC/PC<sup>•−</sup>) (V)</label><input id="ex-red" type="number" step="0.01" placeholder="e.g. −1.33"></div>
+      <div><label for="ex-e00">E<sub>0,0</sub> (eV)</label><input id="ex-e00" type="number" step="0.01" placeholder="e.g. 2.10"></div>
+      <div><label for="ex-lam">… or from wavelength λ (nm)</label><input id="ex-lam" type="number" step="1" placeholder="e.g. 590"></div>
+    </div>
+    <p class="small muted" style="margin:8px 0 0">Entering λ fills E<sub>0,0</sub> = 1239.84 / λ. Use the crossing point of the normalised absorption and emission spectra (singlets), or the onset/high-energy edge of the 77 K emission (triplets). The emission maximum underestimates E<sub>0,0</sub>. When you pick a catalyst from the table, the published excited-state values are shown first. For several catalysts (e.g. Ir(ppy)₃, the Ir-dF(CF₃) complexes, 4CzIPN, eosin Y) these differ by 0.1–0.5 V from E(ground) ± the listed E<sub>0,0</sub>, because the original authors used a different E<sub>0,0</sub> estimate (emission onset vs. absorption/emission crossing, singlet vs. triplet). The recalculated value is shown underneath so you can see the difference.</p>
+
+    <div class="grid-out">
+      <div class="out"><div class="k">Excited-state reductant &nbsp;E(PC<sup>•+</sup>/PC*)</div><div id="ex-oxs" class="result rd">—</div><div class="small muted" id="ex-oxs-how">= E(PC<sup>•+</sup>/PC) − E<sub>0,0</sub></div></div>
+      <div class="out"><div class="k">Excited-state oxidant &nbsp;E(PC*/PC<sup>•−</sup>)</div><div id="ex-reds" class="result ox">—</div><div class="small muted" id="ex-reds-how">= E(PC/PC<sup>•−</sup>) + E<sub>0,0</sub></div></div>
+    </div>
+
+    <h3>Will electron transfer to/from my substrate be favourable?</h3>
+    <div class="row">
+      <div><label for="ex-mode">Quenching mode</label>
+        <select id="ex-mode">
+          <option value="red">Reductive quenching (PC* oxidises the substrate)</option>
+          <option value="ox">Oxidative quenching (PC* reduces the substrate)</option>
+        </select></div>
+      <div><label for="ex-sub" id="ex-sub-lab">Substrate E<sub>1/2</sub>(S<sup>•+</sup>/S) (V, same scale)</label><input id="ex-sub" type="number" step="0.01" placeholder="e.g. 1.10"></div>
+    </div>
+    <div class="out" style="margin-top:12px"><div class="k">Estimated ΔG<sub>ET</sub></div><div id="ex-dg" class="result">—</div><div id="ex-dg-txt" class="small muted"></div></div>
+    <div class="note">This is the simple Rehm–Weller estimate without the Coulombic work term (usually ≤0.1 eV in polar solvents such as MeCN), so treat it as a rough guide. Use E<sub>0,0</sub> for the excited state that actually reacts: the singlet for most organic dyes and acridiniums, the triplet for Ir/Ru complexes and TADF triplet pathways. Slightly endergonic steps (up to ~+0.1–0.2 eV) can still work, and fast follow-up chemistry (fragmentation, deprotonation) can pull them forward.</div>
+  </div>
+</section>
+
+<!-- ================= PHOTOCATALYST TABLE ================= -->
+<section id="tbl">
+  <div class="card">
+    <h2>Photocatalysts</h2>
+    <div class="row">
+      <div><label for="tb-q">Search</label><input id="tb-q" type="search" placeholder="Ir, acridinium, eosin, 4CzIPN, phenothiazine…"></div>
+      <div><label for="tb-ref">Show potentials vs</label><select id="tb-ref"></select></div>
+      <div><label for="tb-cls">Class</label><select id="tb-cls"><option value="">All</option><option>Ru</option><option>Ir</option><option>Cu</option><option>Organic</option></select></div>
+    </div>
+    <p class="small muted">Values are given as reported, measured in MeCN vs SCE unless the note says otherwise. If you switch scale, the table converts them with the MeCN constant (Fc⁺/Fc = +0.38 V vs SCE); converted values are marked <span class="pill">conv.</span>. Source badges: <span class="pill">primary</span> original paper, <span class="pill rev">review</span> peer-reviewed compilation, <span class="pill sec">secondary</span> vendor sheet, lab chart or non-English review. Click a column header to sort.</p>
+    <div class="toolbar"><button class="btn" id="pc-csv">Download CSV</button></div>
+    <div class="tablewrap">
+      <table id="tb">
+        <thead><tr>
+          <th data-k="name">Photocatalyst</th>
+          <th data-k="ox">E(PC<sup>•+</sup>/PC)</th>
+          <th data-k="red">E(PC/PC<sup>•−</sup>)</th>
+          <th data-k="oxs" class="rd">E(PC<sup>•+</sup>/PC*)</th>
+          <th data-k="reds" class="ox">E(PC*/PC<sup>•−</sup>)</th>
+          <th data-k="e00">E<sub>0,0</sub> (eV)</th>
+          <th data-k="labs">λ<sub>abs</sub> (nm)</th>
+          <th data-k="lem">λ<sub>em</sub> (nm)</th>
+          <th data-k="tau">τ (ns)</th>
+          <th>Source</th>
+          <th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="note">Reported potentials for the same organic photocatalyst can differ by several hundred mV between papers, because of the solvent, the electrolyte, irreversible waves, and whether the singlet or triplet E<sub>0,0</sub> was used. Each row gives one traceable value set, and "—" means the cited source does not report that value. Excited-state values are reproduced as published, even where they differ from E(ground) ± the listed E<sub>0,0</sub>. Always check the original paper before you use a number in a manuscript.</div>
+  </div>
+</section>
+
+<!-- ================= PRECURSOR TABLE ================= -->
+<section id="pre">
+  <div class="card">
+    <h2>Radical precursors, reductants and substrate classes</h2>
+    <div class="row">
+      <div><label for="pr-q">Search</label><input id="pr-q" type="search" placeholder="carboxylate, NHPI, Katritzky, silicate, diazonium…"></div>
+      <div><label for="pr-proc">Activation</label><select id="pr-proc"><option value="">All</option><option value="ox">Oxidised (SET from precursor)</option><option value="red">Reduced (SET to precursor)</option></select></div>
+      <div><label for="pr-ref">Show potentials vs</label><select id="pr-ref"></select></div>
+      <div><label for="pr-pc">Check against photocatalyst</label><select id="pr-pc"><option value="">— none —</option></select></div>
+    </div>
+    <p class="small muted">Oxidised precursors are listed with E(S<sup>•+</sup>/S) or E(S<sup>•</sup>/S<sup>−</sup>) for anions; reduced precursors with E(S/S<sup>•−</sup>). Most are irreversible, so the values are peak or half-peak potentials and are only approximate. The <span class="tag">type</span> label tells you what was measured. Ranges show the spread within a class.</p>
+    <p class="small muted legend" id="pr-legend" style="display:none"><b>ΔG<sub>ET</sub> (eV):</b> <span class="dg good">&lt; −0.05 favourable</span><span class="dg mid">−0.05 to +0.15 borderline</span><span class="dg bad">&gt; +0.15 unfavourable</span>. For oxidised precursors: PC* as oxidant. For reduced precursors: the better of PC* (oxidative quenching) and PC<sup>•−</sup> (formed after reductive quenching). For ranges, the more favourable end is shown first.</p>
+    <div class="toolbar"><button class="btn" id="pr-csv">Download CSV</button></div>
+    <div class="tablewrap">
+      <table id="pr">
+        <thead><tr>
+          <th data-k="cls">Class</th>
+          <th data-k="name">Example / scope</th>
+          <th data-k="proc">Activation</th>
+          <th data-k="E">E (V)</th>
+          <th>Type</th>
+          <th>Radical formed</th>
+          <th id="pr-dg-h" style="display:none">ΔG<sub>ET</sub> (eV)</th>
+          <th>Source</th>
+          <th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="note"><b>Not included yet:</b> Togni and Umemoto reagents, Langlois reagent (CF<sub>3</sub>SO<sub>2</sub>Na), xanthates, α-silylamines, oxime esters, N-alkoxyphthalimides and Barton esters. They will be added once each value can be tied to a primary measurement. Commonly quoted numbers for these reagents vary widely and are often given without a source.</div>
+  </div>
+</section>
+
+<!-- ================= ABOUT ================= -->
+<section id="about">
+  <div class="card">
+    <h2>Sources</h2>
+    <ol class="refs" id="refs"></ol>
+    <h2 style="margin-top:20px">Conventions &amp; caveats</h2>
+    <ul class="small">
+      <li><b>Notation.</b> E(PC<sup>•+</sup>/PC*) is the excited state acting as a <span class="rd">reductant</span> (more negative = stronger). E(PC*/PC<sup>•−</sup>) is the excited state acting as an <span class="ox">oxidant</span> (more positive = stronger). Charges are written generically; for Ru(bpy)<sub>3</sub><sup>2+</sup>, "PC<sup>•+</sup>" means Ru(III).</li>
+      <li><b>Ferrocene is the reliable link.</b> Aqueous reference electrodes (SCE, Ag/AgCl) used in organic solvents add unknown liquid-junction potentials. IUPAC recommends reporting against Fc<sup>+</sup>/Fc measured in the same solution. Conversions to NHE or Ag/AgCl in organic solvents are approximate.</li>
+      <li><b>Fc<sup>+</sup>/Fc vs SCE depends on the solvent and electrolyte.</b> For MeCN this tool uses 0.38 V (Pavlishchuk &amp; Addison, 0.1 M Et<sub>4</sub>NClO<sub>4</sub>/Et<sub>4</sub>NPF<sub>6</sub>) by default, or 0.40 V (Connelly &amp; Geiger, [NBu<sub>4</sub>][PF<sub>6</sub>]), which many organic papers use. The 20 mV difference is the real uncertainty in practice.</li>
+      <li><b>Aqueous constants used:</b> SCE = +0.241 V vs NHE; Ag/AgCl (sat. KCl) = +0.197 V; Ag/AgCl (3 M KCl) = +0.210 V; all at 25 °C.</li>
+      <li><b>Irreversible waves.</b> Most radical precursors fragment after electron transfer, so only a peak potential (E<sub>p</sub>) or half-peak potential (E<sub>p/2</sub>) is available. E<sub>p</sub> overestimates the thermodynamic potential, often by 0.1 V or more, and depends on the scan rate. Roth, Romero &amp; Nicewicz (2016) recommend E<sub>p/2</sub>.</li>
+      <li><b>Thermodynamics ≠ kinetics.</b> A favourable ΔG<sub>ET</sub> means electron transfer is possible, not that it is fast. Confirm with Stern–Volmer quenching. Chain processes, EDA complexes and HAT can also give products when direct SET is uphill.</li>
+    </ul>
+    <h2 style="margin-top:20px">Contribute</h2>
+    <p class="small">Missing a catalyst or precursor, or found a wrong value? Open an issue or pull request with the DOI and the table/page number. Only values that can be traced to a primary source or a major review are accepted.</p>
+  </div>
+</section>
+</main>
+
+<footer>
+  Photoredox Toolkit · built by <a href="https://sripatijana.github.io">Sripati Jana</a> · open source on GitHub · Literature values compiled for convenience. Verify against the original reports before you use them in publications.
+</footer>
+
+<script>
+/* =====================================================================
+   REFERENCES. kind: primary | review | secondary
+   ===================================================================== */
+const REFS = {
+  prier2013:  {short:"Prier 2013", kind:"review", txt:"C. K. Prier, D. A. Rankic, D. W. C. MacMillan, Chem. Rev. 2013, 113, 5322–5363 (Table 1).", doi:"10.1021/cr300503r"},
+  bryden2021: {short:"Bryden 2021", kind:"review", txt:"M. A. Bryden, E. Zysman-Colman, Chem. Soc. Rev. 2021, 50, 7587–7680 (Tables 1 and 2; Table 2 compiles the cyanoarene TADF dyes, mostly from Speckmeier 2018).", doi:"10.1039/D1CS00198A"},
+  knowles2016:{short:"Zhu 2016", kind:"primary", txt:"Q. Zhu, E. C. Gentry, R. R. Knowles, Angew. Chem. Int. Ed. 2016, 55, 9969 (values as tabulated by TCI).", doi:"10.1002/anie.201604619"},
+  ma2021:     {short:"Ma 2021", kind:"primary", txt:"Q. Ma, J. Song, X. Zhang, Y. Jiang, L. Ji, S. Liao, Nat. Commun. 2021, 12, 429 (values as tabulated by TCI).", doi:"10.1038/s41467-020-20645-8"},
+  bortolato2022:{short:"Bortolato 2022", kind:"review", txt:"T. Bortolato, S. Cuadros, G. Simionato, L. Dell'Amico, Chem. Commun. 2022, 58, 1263 (values as tabulated by TCI).", doi:"10.1039/D1CC05850A"},
+  speckmeier2018:{short:"Speckmeier 2018", kind:"primary", txt:"E. Speckmeier, T. G. Fischer, K. Zeitler, J. Am. Chem. Soc. 2018, 140, 15353–15365 (values as quoted in later papers; see note).", doi:"10.1021/jacs.8b08933"},
+  gandini2022:{short:"Gandini 2022", kind:"primary", txt:"T. Gandini, L. Dolcini, L. Di Leo, M. Fornara, A. Bossi, M. Penconi, A. Dal Corso, C. Gennari, L. Pignataro, ChemCatChem 2022 (metallaphotoredox C–O/C–N coupling with cyanoarene photocatalysts; Table 2).", doi:"10.1002/cctc.202200990"},
+  amos2020:   {short:"Amos 2020", kind:"review", txt:"S. G. E. Amos, M. Garreau, L. Buzzetti, J. Waser, Beilstein J. Org. Chem. 2020, 16, 1163–1187 (open access).", doi:"10.3762/bjoc.16.103"},
+  garreau2019:{short:"Garreau 2019", kind:"primary", txt:"M. Garreau, F. Le Vaillant, J. Waser, Angew. Chem. Int. Ed. 2019, 58, 8182 (SI Table S1: CV/E₀,₀ of 4CzIPN and DPAIPN dyes measured in MeCN; amino-acid carboxylate potentials quoted in the text from Zuo & MacMillan, J. Am. Chem. Soc. 2014, 136, 5257).", doi:"10.1002/anie.201901922"},
+  chart2014:  {short:"MacMillan chart", kind:"secondary", txt:"D. DiRocco (compiler), \"Electrochemical Series of Photocatalysts and Common Organic Compounds\", Merck chart, 2014 (V vs SCE; individual sources not given).", url:"https://macmillan.princeton.edu/wp-content/uploads/Merck-Photocatalysis-Chart.pdf"},
+  nawrat2015: {short:"Nawrat 2015", kind:"primary", txt:"C. C. Nawrat, C. R. Jamison, Y. Slutskyy, D. W. C. MacMillan, L. E. Overman, J. Am. Chem. Soc. 2015, 137, 11270.", doi:"10.1021/jacs.5b07678"},
+  milligan2019:{short:"Milligan 2019", kind:"review", txt:"J. A. Milligan, J. P. Phelan, S. O. Badir, G. A. Molander, Angew. Chem. Int. Ed. 2019, 58, 6152–6163 (Ni/photoredox alkyl cross-coupling review; class-average potentials).", doi:"10.1002/anie.201809431"},
+  synlett731: {short:"Synlett 2016b", kind:"primary", txt:"L. Chenneberg, C. Lévêque, V. Corcé, A. Baralle, J.-P. Goddard, C. Ollivier, L. Fensterbank, Synlett 2016, 27, 731–735.", doi:"10.1055/s-0035-1561337"},
+  oxaz2022:   {short:"Luguera Ruiz 2022", kind:"primary", txt:"A. Luguera Ruiz, M. La Mantia, D. Merli, S. Protti, M. Fagnoni, ACS Catal. 2022, 12, 12469–12476 (Table 1; DHP and Et₃N values quoted in the introduction).", doi:"10.1021/acscatal.2c03768"},
+  carbamoyl2020:{short:"Cardinale 2020", kind:"primary", txt:"L. Cardinale, M. O. Konev, A. Jacobi von Wangelin, Chem. Eur. J. 2020, 26, 8239 (CV of the 4-carbamoyl Hantzsch ester).", doi:"10.1002/chem.202002410"},
+  yi2019:     {short:"Yi 2019", kind:"primary", txt:"J. Yi, S. O. Badir, L. M. Kammer, M. Ribagorda, G. A. Molander, Org. Lett. 2019, 21, 3346 (Katritzky salt potential quoted from earlier work).", doi:"10.1021/acs.orglett.9b01097"},
+  bryden2023: {short:"Bryden 2023", kind:"primary", txt:"M. A. Bryden et al., \"Dual Photosensitizer Cycles Working Synergistically in a C(sp²)–C(sp³) Cross-Coupling\", Asian J. Org. Chem. 2023 (values quoted from literature).", url:"https://cris.unibo.it/retrieve/94e42be1-456f-4660-88fa-fb5abc3db669/Asian%20J%20Org%20Chem%20-%202023%20-%20Bryden%20-%20Dual%20Photosensitizer%20Cycles%20Working%20Synergistically%20in%20a%20C%20sp%20%e2%80%90C%20sp3%20Cross%e2%80%90Coupling.pdf"},
+  wang2019:   {short:"Wang 2019", kind:"primary", txt:"X. Wang, Y.-F. Han, X.-H. Ouyang, R.-J. Song, J.-H. Li, Chem. Commun. 2019 (photoredox alkylarylation of styrenes with NHPI esters; SI, CV of adamantyl NHPI ester).", doi:"10.1039/C9CC07494E"},
+  kvasovs2021:{short:"Kvasovs 2021", kind:"review", txt:"N. Kvasovs, V. Gevorgyan, Chem. Soc. Rev. 2021, 50, 2244–2259 (aryl radical generation).", doi:"10.1039/D0CS00589D"},
+  romanczyk2017:{short:"Romańczyk 2017", kind:"primary", txt:"P. P. Romańczyk, S. S. Kurek, \"The reduction potential of diphenyliodonium polymerisation photoinitiator is not −0.2 V vs. SCE. A computational study\", Electrochim. Acta 2017.", doi:"10.1016/j.electacta.2017.09.166"},
+  weick2023:  {short:"Weick 2023", kind:"primary", txt:"F. Weick, N. Hagmeyer, M. Giraud, B. Dietzek-Ivanšić, H.-A. Wagenknecht, Chem. Eur. J. 2023 (introduction gives typical reduction potentials of aryl radical precursors and N-arylphenothiazine excited-state potentials).", doi:"10.1002/chem.202302347"},
+  roth2016:   {short:"Roth 2016", kind:"primary", txt:"H. G. Roth, N. A. Romero, D. A. Nicewicz, Synlett 2016, 27, 714–723 (E_p/2 for >180 organic molecules, MeCN).", doi:"10.1055/s-0035-1561297"},
+  he2022:     {short:"Liu 2022", kind:"primary", txt:"Y. Liu, S. Lin, D. Zhang, B. Song, Y. Jin, E. Hao, L. Shi, Org. Lett. 2022, 24, 3331 (photochemical NHK coupling; excited Hantzsch ester potential quoted).", url:"https://faculty.dlut.edu.cn/_resources/group1/M00/00/78/ynZMhGKSSa6AWM2BABXIWXLNucY496.pdf"},
+  pavl2000:   {short:"Pavlishchuk 2000", kind:"primary", txt:"V. V. Pavlishchuk, A. W. Addison, Inorg. Chim. Acta 2000, 298, 97–102 (MeCN reference conversion constants; see 2025 corrigendum on the electrolyte concentration).", doi:"10.1016/S0020-1693(99)00407-7"},
+  cg1996:     {short:"Connelly 1996", kind:"review", txt:"N. G. Connelly, W. E. Geiger, Chem. Rev. 1996, 96, 877–910 (Fc⁺/Fc vs SCE in common solvents, [NBu₄][PF₆]).", doi:"10.1021/cr940053x"},
+  lmct2024:   {short:"OSTI LMCT", kind:"primary", txt:"\"Electrophotocatalytic perfluoroalkylation by LMCT excitation\" (accepted manuscript, OSTI); states that TFA oxidation requires more than +2.2 V vs SCE, citing earlier electrochemistry.", url:"https://www.osti.gov/servlets/purl/2582763"},
+  romero2016: {short:"Romero 2016", kind:"review", txt:"N. A. Romero, D. A. Nicewicz, Chem. Rev. 2016, 116, 10075–10166 (organic photoredox catalysis; general reference).", doi:"10.1021/acs.chemrev.6b00057"}
+};
+const refLink = r => r.doi ? "https://doi.org/"+r.doi : r.url;
+const kindPill = k => k==="primary" ? '<span class="pill">primary</span>' : k==="review" ? '<span class="pill rev">review</span>' : '<span class="pill sec">secondary</span>';
+
+/* =====================================================================
+   PHOTOCATALYSTS  (V vs SCE in MeCN unless 'note' says otherwise)
+   ox   = E(PC radical cation / PC)      red  = E(PC / PC radical anion)
+   oxs  = E(PC radical cation / PC-star) [excited-state reductant]
+   reds = E(PC-star / PC radical anion)  [excited-state oxidant]
+   For cationic dyes (acridinium, pyrylium) "red" is E(PC+/PC radical) and
+   "reds" is E(PC+-star/PC radical).  null = not reported in the cited source.
+   ===================================================================== */
+const DATA = [
+  {name:"Ru(bpy)₃²⁺", cls:"Ru", ox:1.29, red:-1.33, oxs:-0.81, reds:0.77, e00:2.10, labs:452, lem:615, tau:1100, src:"prier2013", e00src:"bryden2021", note:"E₀,₀ is the optical gap to T₁ (Bryden 2021)."},
+  {name:"Ru(phen)₃²⁺", cls:"Ru", ox:1.26, red:-1.36, oxs:-0.87, reds:0.82, e00:null, labs:422, lem:610, tau:500, src:"prier2013", note:"λem measured in water."},
+  {name:"Ru(bpm)₃²⁺", cls:"Ru", ox:1.69, red:-0.91, oxs:-0.21, reds:0.99, e00:null, labs:454, lem:639, tau:131, src:"prier2013", note:"τ and λem measured in propylene carbonate."},
+  {name:"Ru(bpz)₃²⁺", cls:"Ru", ox:1.86, red:-0.80, oxs:-0.26, reds:1.45, e00:null, labs:443, lem:591, tau:740, src:"prier2013"},
+  {name:"Cu(dap)₂⁺", cls:"Cu", ox:0.62, red:null, oxs:-1.43, reds:null, e00:null, labs:null, lem:670, tau:270, src:"prier2013", note:"λem measured in CH₂Cl₂. dap = 2,9-bis(p-anisyl)-1,10-phenanthroline."},
+  {name:"fac-Ir(ppy)₃", cls:"Ir", ox:0.77, red:-2.19, oxs:-1.73, reds:0.31, e00:2.75, labs:375, lem:494, tau:1900, src:"prier2013", e00src:"bryden2021", note:"λem at 77 K (EtOH/MeOH glass). E₀,₀ is the optical gap to T₁; Bryden 2021 lists λPL 518 nm and τ = 1322 ns at room temperature."},
+  {name:"fac-Ir(dF-ppy)₃", cls:"Ir", ox:1.18, red:-2.11, oxs:null, reds:null, e00:null, labs:347, lem:null, tau:null, src:"chart2014"},
+  {name:"[Ir(ppy)₂(dtbbpy)]⁺", cls:"Ir", ox:1.21, red:-1.51, oxs:-0.96, reds:0.66, e00:null, labs:410, lem:581, tau:557, src:"prier2013", note:"λabs from Bryden 2021 (Table 1); not given in Prier 2013."},
+  {name:"[Ir(dF(CF₃)ppy)₂(dtbbpy)]⁺", cls:"Ir", ox:1.69, red:-1.37, oxs:-0.89, reds:1.21, e00:2.77, labs:380, lem:470, tau:2300, src:"prier2013", e00src:"bryden2021", note:"E₀,₀ is the optical gap to T₁ (Bryden 2021)."},
+  {name:"[Ir(dF(CF₃)ppy)₂(bpy)]⁺", cls:"Ir", ox:1.69, red:-1.37, oxs:-1.00, reds:1.32, e00:2.20, labs:405, lem:473, tau:2280, src:"bryden2021", note:"E₀,₀ is the optical gap to T₁."},
+  {name:"[Ir(dF(CF₃)ppy)₂(5,5′-dCF₃bpy)]⁺", cls:"Ir", ox:1.94, red:-0.69, oxs:-0.43, reds:1.68, e00:null, labs:null, lem:null, tau:null, src:"knowles2016", note:"Very strongly oxidising excited state (Knowles)."},
+  {name:"[Ir(dF(Me)ppy)₂(dtbbpy)]⁺", cls:"Ir", ox:1.49, red:-1.44, oxs:-0.97, reds:0.92, e00:2.97, labs:360, lem:512, tau:1187, src:"bryden2021", note:"E₀,₀ is the optical gap to T₁. Ganley/Knowles (ACS Catal. 2020) report E(PC*/PC•−) = +0.99 V and E(PC/PC•−) = −1.41 V."},
+  {name:"[Ir(F(Me)ppy)₂(dtbbpy)]⁺", cls:"Ir", ox:1.33, red:-1.50, oxs:-0.77, reds:0.94, e00:2.44, labs:null, lem:543, tau:1100, src:"bryden2021", note:"E₀,₀ is the optical gap to T₁."},
+  // ---- donor–acceptor cyanoarenes (TADF) ----
+  {name:"4CzIPN", cls:"Organic", ox:1.52, red:-1.21, oxs:-1.04, reds:1.35, e00:2.67, labs:435, lem:535, tau:18.7, src:"bryden2021", note:"TADF: τ = 18.7 ns (prompt), 1.39 µs (delayed). Garreau 2019 re-measured it under their conditions: E₀,₀ 2.64 eV, E(PC/PC•−) −1.32, E(PC*/PC•−) +1.32, E(PC•+/PC) +1.39, E(PC•+/PC*) −1.25 V. That gives an idea of how much values vary between labs."},
+  {name:"4tBuCzIPN", cls:"Organic", ox:1.22, red:-1.32, oxs:-1.31, reds:1.21, e00:2.53, labs:null, lem:null, tau:null, src:"garreau2019", note:"tert-Butyl groups stop carbazole oxidation/polymerisation seen with 4CzIPN."},
+  {name:"4OMeCzIPN", cls:"Organic", ox:1.05, red:-1.38, oxs:-1.56, reds:1.23, e00:2.61, labs:null, lem:null, tau:null, src:"garreau2019", note:"Le Vaillant et al. (Chem. Sci. 2018) report E(PC•+/PC) +1.11, E(PC/PC•−) −1.50, E(PC*/PC•−) +1.27, E(PC•+/PC*) −1.34 V."},
+  {name:"3CzClIPN", cls:"Organic", ox:1.79, red:-1.16, oxs:-0.93, reds:1.56, e00:2.72, labs:null, lem:545, tau:6.9, src:"bryden2021", note:"Originally Speckmeier 2018. Strongly oxidising cyanoarene; τ is the prompt fluorescence lifetime."},
+  {name:"3DPAFIPN", cls:"Organic", ox:1.30, red:-1.59, oxs:-1.38, reds:1.09, e00:2.68, labs:null, lem:525, tau:4.2, src:"bryden2021", note:"Originally Speckmeier 2018. Some papers before 2021 called this dye \"4DPAIPN\" by mistake (Luo & Zhang, ACS Catal. 2016, later corrected)."},
+  {name:"3DPAClIPN", cls:"Organic", ox:1.31, red:-1.41, oxs:-1.34, reds:1.24, e00:2.65, labs:null, lem:537, tau:11.5, src:"bryden2021", note:"Originally Speckmeier 2018."},
+  {name:"3DPA2FBN", cls:"Organic", ox:1.24, red:-1.92, oxs:-1.60, reds:0.92, e00:2.84, labs:null, lem:491, tau:4.2, src:"bryden2021", note:"Originally Speckmeier 2018. Potentials measured in CH₂Cl₂. Strongly reducing cyanoarene."},
+  {name:"5CzBN", cls:"Organic", ox:1.41, red:-1.52, oxs:-1.42, reds:1.31, e00:2.83, labs:null, lem:512, tau:16.2, src:"bryden2021", note:"Prompt τ 16.2 ns, delayed 7.8 µs."},
+  {name:"2CzPN", cls:"Organic", ox:1.47, red:-1.45, oxs:-1.30, reds:1.32, e00:2.77, labs:365, lem:530, tau:12.9, src:"bryden2021", note:"Prompt τ 12.9 ns, delayed 15.4 µs."},
+  {name:"4CzTPN", cls:"Organic", ox:1.44, red:-1.02, oxs:-0.99, reds:1.41, e00:2.43, labs:463, lem:556, tau:6.5, src:"bryden2021", note:"Data in CH₂Cl₂ according to the footnote. Prompt τ 6.5 ns, delayed 1.46 µs."},
+  {name:"4DPAIPN (true, Wickens dye)", cls:"Organic", ox:1.03, red:-1.65, oxs:-1.52, reds:0.90, e00:2.55, labs:null, lem:null, tau:null, src:"garreau2019", note:"The real tetrakis(diphenylamino)isophthalonitrile. The older \"4DPAIPN\" values (E(PC*/PC•−) +1.10 V, Luo & Zhang 2016; also listed under that name in Bryden 2021 Table 2) belong to the mislabelled 3DPAFIPN-type dye."},
+  {name:"4ClDPAIPN", cls:"Organic", ox:1.23, red:-1.44, oxs:-1.30, reds:1.09, e00:2.53, labs:null, lem:null, tau:null, src:"garreau2019"},
+  {name:"4BrDPAIPN", cls:"Organic", ox:1.12, red:-1.55, oxs:-1.41, reds:0.98, e00:2.53, labs:null, lem:null, tau:null, src:"garreau2019"},
+  {name:"3CzFIPN", cls:"Organic", ox:1.64, red:-1.11, oxs:-1.06, reds:1.59, e00:2.70, labs:null, lem:null, tau:7.2, src:"gandini2022", note:"TADF: τ = 7.2 ns (prompt), 760 ns (delayed). E(PC•+/PC) and E(PC•+/PC*) are onset potentials (irreversible)."},
+  // ---- cationic dyes ----
+  {name:"Mes-Acr-Me⁺ ClO₄⁻ (Fukuzumi acridinium)", cls:"Organic", ox:null, red:-0.57, oxs:null, reds:2.08, e00:2.65, labs:430, lem:570, tau:6.4, src:"bryden2021", note:"τ: 6.4 ns singlet, 30 µs triplet. The MacMillan chart and Chenneberg 2016 give +2.06 V. A lower value (+1.88 V, used in Cardinale 2020) is also quoted, depending on which excited state reacts; see Romero & Nicewicz 2016."},
+  {name:"2,4,6-Triphenylpyrylium BF₄⁻", cls:"Organic", ox:null, red:-0.35, oxs:null, reds:2.3, e00:null, labs:417, lem:null, tau:null, src:"chart2014", note:"Excited-state value for the triplet (T₁)."},
+  // ---- xanthenes ----
+  {name:"Eosin Y", cls:"Organic", ox:0.78, red:-1.06, oxs:-1.11, reds:0.83, e00:2.31, labs:520, lem:537, tau:2.1, src:"bryden2021", note:"Potentials in MeCN:H₂O (1:1); λabs and E₀,₀ in MeOH; λem in H₂O. τ: 2.1 ns singlet, 160 µs triplet (H₂O). Strongly pH/medium dependent. Triplet E* = +0.79 V (MacMillan chart); singlet E* = +1.18 V (Chenneberg 2016)."},
+  {name:"Fluorescein", cls:"Organic", ox:null, red:-1.27, oxs:null, reds:0.78, e00:null, labs:528, lem:null, tau:null, src:"chart2014", note:"Excited-state value for the triplet. Chenneberg 2016 gives singlet E* = +1.21 V (τ 4.2 ns)."},
+  {name:"Rose Bengal", cls:"Organic", ox:0.84, red:-0.99, oxs:-0.96, reds:0.81, e00:2.17, labs:558, lem:576, tau:2.38, src:"bryden2021", note:"Data in MeOH. τ: 2.38 ns singlet, 2.4 µs triplet. The excited-state values are not Eox − E₀,₀ / Ered + E₀,₀ of the listed ground-state values (they come from different reports), so they are likely triplet potentials."},
+  // ---- others ----
+  {name:"peri-Xanthenoxanthene (PXX)", cls:"Organic", ox:0.82, red:null, oxs:-1.76, reds:null, e00:null, labs:null, lem:null, tau:null, src:"ma2021"},
+  {name:"10-Phenylphenothiazine (PTH)", cls:"Organic", ox:0.68, red:null, oxs:-2.1, reds:null, e00:null, labs:null, lem:null, tau:null, src:"bortolato2022", note:"E(PC•+/PC*) = −2.1 V (singlet), −1.7 V (triplet). Weick 2023 quotes −2.5 V for the same dye, so treat the value with care."},
+  {name:"N-(4-Diisobutylaminophenyl)phenothiazine", cls:"Organic", ox:null, red:null, oxs:-2.9, reds:null, e00:null, labs:null, lem:null, tau:null, src:"weick2023", note:"Larionov-type catalyst; singlet excited state. Strong enough to reduce aryl chlorides."}
+];
+
+/* =====================================================================
+   RADICAL PRECURSORS / SUBSTRATE CLASSES
+   proc: ox (precursor is oxidised) | red (precursor is reduced)
+   E: number or [lo, hi] (V vs SCE, MeCN unless noted)
+   type: E1/2 | Ep/2 | Ep | Epa | avg (class average) | typical | range | quoted (value quoted from an earlier paper) | chart (read from the MacMillan/Merck chart)
+   ===================================================================== */
+const PRE = [
+  // ---- oxidised precursors ----
+  {cls:"Carboxylates", name:"Boc-Pro carboxylate (α-amino, 2°)", proc:"ox", E:0.95, type:"quoted", rad:"α-amino alkyl (after −CO₂)", src:"garreau2019", note:"Quoted in Garreau 2019 from Zuo & MacMillan, J. Am. Chem. Soc. 2014, 136, 5257."},
+  {cls:"Carboxylates", name:"Boc-Gly carboxylate (α-amino, 1°)", proc:"ox", E:1.20, type:"quoted", rad:"α-amino alkyl", src:"garreau2019"},
+  {cls:"Carboxylates", name:"Primary α-amino-acid carboxylates", proc:"ox", E:[1.20,1.45], type:"range", rad:"α-amino alkyl", src:"garreau2019", note:"Up to +1.45 V. Easily oxidised side chains such as Tyr (+1.1 to +1.27 V) and Trp (+0.77 to +1.16 V) can compete."},
+  {cls:"Carboxylates", name:"Alkyl carboxylates (general)", proc:"ox", E:1.3, type:"typical", rad:"alkyl (after −CO₂)", src:"amos2020", note:"Free acids are much harder to oxidise, so carboxylates are generated in situ with base."},
+  {cls:"Carboxylates", name:"α-N-oxy acid (Cs carboxylate)", proc:"ox", E:1.6, type:"typical", rad:"iminyl (after −CO₂, −acetone)", src:"amos2020", note:"Needs a strongly oxidising photocatalyst such as Mes-Acr⁺."},
+  {cls:"Oxalates", name:"tert-Alkyl cesium oxalates (t-BuOCOCO₂Cs)", proc:"ox", E:1.28, type:"E1/2", rad:"3° alkyl (after −2 CO₂)", src:"nawrat2015", note:"Activates tertiary alcohols. Used with Ir[dF(CF₃)ppy]₂(dtbbpy)⁺."},
+  {cls:"Organoborates", name:"Alkyl trifluoroborates (BF₃K), class average", proc:"ox", E:1.10, type:"avg", rad:"alkyl", src:"milligan2019"},
+  {cls:"Organoborates", name:"Secondary alkyl trifluoroborates", proc:"ox", E:1.50, type:"typical", rad:"2° alkyl", src:"milligan2019"},
+  {cls:"Organoborates", name:"Alkyl trifluoroborates, full range", proc:"ox", E:[1.10,1.83], type:"range", rad:"alkyl / aryl", src:"synlett731", note:"About +1.1 V for benzylic and α-alkoxymethyl; up to +1.83 V for primary alkyl and aryl BF₃K."},
+  {cls:"Silicates", name:"Alkyl bis(catecholato)silicates, class average", proc:"ox", E:0.75, type:"avg", rad:"alkyl (incl. 1° unstabilised)", src:"milligan2019", note:"Low potential, so they work with milder photocatalysts, including 1° radicals."},
+  {cls:"Silicates", name:"Alkyl bis(catecholato)silicates, range", proc:"ox", E:[0.61,0.75], type:"range", rad:"alkyl", src:"synlett731", note:"+0.61 V (benzyl) to +0.75 V."},
+  {cls:"Dihydropyridines", name:"4-Alkyl-1,4-dihydropyridines (Hantzsch-type), class average", proc:"ox", E:1.05, type:"avg", rad:"alkyl (aromatisation-driven)", src:"milligan2019", note:"Luguera Ruiz 2022 gives the same value."},
+  {cls:"Dihydropyridines", name:"4-Carbamoyl Hantzsch ester", proc:"ox", E:1.17, type:"Epa", rad:"carbamoyl", src:"carbamoyl2020"},
+  {cls:"Oxazolidines", name:"2-Substituted oxazolidines", proc:"ox", E:[0.86,1.35], type:"range", rad:"alkyl (C–C cleavage)", src:"oxaz2022", note:"Six of seven compounds are between +1.19 and +1.35 V; one is +0.86 V."},
+  {cls:"Acylsilanes", name:"Acylsilanes", proc:"ox", E:1.3, type:"typical", rad:"acyl", src:"amos2020"},
+  {cls:"Amides", name:"Amides (N–H, for amidyl radicals)", proc:"ox", E:[1.2,2.0], type:"range", rad:"amidyl (with base / PCET)", src:"amos2020", note:"Usually activated by PCET, not by direct SET."},
+  {cls:"Alkenes", name:"Alkenes (radical cation)", proc:"ox", E:[1.2,1.9], type:"range", rad:"alkene radical cation", src:"amos2020", note:"Electron-rich styrenes are at the low end. Typically needs acridinium-type oxidants."},
+  {cls:"Arenes", name:"Mesitylene", proc:"ox", E:2.07, type:"Ep/2", rad:"arene radical cation", src:"roth2016"},
+  {cls:"Halides", name:"Bu₄N⁺ I⁻", proc:"ox", E:0.26, type:"Ep/2", rad:"I•", src:"roth2016", prov:true},
+  {cls:"Halides", name:"Bu₄N⁺ Br⁻", proc:"ox", E:0.71, type:"Ep/2", rad:"Br• (HAT)", src:"roth2016", prov:true},
+  {cls:"Halides", name:"Bu₄N⁺ Cl⁻", proc:"ox", E:1.01, type:"Ep/2", rad:"Cl• (HAT)", src:"roth2016", prov:true, note:"Halide values assigned from the figure order in Roth 2016 (trend I < Br < Cl confirmed in text)."},
+  {cls:"Reductants", name:"Et₃N", proc:"ox", E:0.83, type:"quoted", rad:"α-amino alkyl / aminium", src:"oxaz2022", note:"The MacMillan chart lists +0.96 V."},
+  {cls:"Reductants", name:"DIPEA (iPr₂NEt)", proc:"ox", E:0.81, type:"typical", rad:"α-amino alkyl / aminium", src:"bryden2023", note:"Sacrificial reductant. Other papers quote different values, so check which one your reference uses."},
+  {cls:"Reductants", name:"Hantzsch ester (diethyl 2,6-dimethyl-1,4-DHP-3,5-dicarboxylate)", proc:"ox", E:1.00, type:"typical", rad:"HE•⁺ (then H-atom donor)", src:"bryden2023", note:"In its excited state HE* is itself a strong reductant (about −2.28 V; Liu 2022)."},
+  {cls:"CF₃ / fluoroalkyl", name:"Trifluoroacetate (TFA)", proc:"ox", E:2.2, type:"typical", rad:"CF₃• (after −CO₂)", src:"lmct2024", prov:true, note:"Oxidation needs more than +2.2 V vs SCE, so photoredox use requires LMCT or electrophotocatalysis. Value given as a lower limit."},
+  // ---- reduced precursors ----
+  {cls:"Redox-active esters", name:"N-(Acyloxy)phthalimides (NHPI esters), typical", proc:"red", E:[-1.26,-1.37], type:"range", rad:"alkyl (after −CO₂, −phthalimide)", src:"bryden2023", note:"Lewis acids (e.g. In(OTf)₃) or H-bonding shift reduction to less negative potentials."},
+  {cls:"Redox-active esters", name:"N-Acetoxyphthalimide", proc:"red", E:-1.1, type:"typical", rad:"methyl", src:"amos2020"},
+  {cls:"Redox-active esters", name:"Adamantyl NHPI ester", proc:"red", E:-1.79, type:"Ep", rad:"1-adamantyl", src:"wang2019", note:"Peak potential, so more negative than the E₁/₂-type values above. Shifts to −1.51 V with 20 mol% In(OTf)₃."},
+  {cls:"Pyridinium salts", name:"Katritzky salts (N-alkyl-2,4,6-triphenylpyridinium)", proc:"red", E:-0.93, type:"E1/2", rad:"alkyl (deaminative)", src:"yi2019", note:"About −0.90 V in DMF. Primary radicals are released more slowly after reduction, so the C–N cleavage step can limit the rate."},
+  {cls:"Aryl radical precursors", name:"Aryl diazonium salts", proc:"red", E:-0.16, type:"typical", rad:"aryl (after −N₂)", src:"kvasovs2021", note:"Range about −0.1 to −0.3 V (Amos 2020). Reduced by almost any photocatalyst, and ground-state reduction is often possible."},
+  {cls:"Aryl radical precursors", name:"Diaryliodonium salts", proc:"red", E:[-0.2,-0.68], type:"range", rad:"aryl", src:"romanczyk2017", note:"Often quoted as −0.2 V vs SCE. High-level calculations give −0.61 to −0.68 V, so treat −0.2 V with caution."},
+  {cls:"Aryl radical precursors", name:"Triarylsulfonium salts", proc:"red", E:-1.5, type:"typical", rad:"aryl", src:"weick2023"},
+  {cls:"Aryl radical precursors", name:"Aryl thianthrenium salts", proc:"red", E:-1.5, type:"typical", rad:"aryl (fast fragmentation)", src:"kvasovs2021", note:"About −1.5 V on average; very fast C–S fragmentation after reduction."},
+  {cls:"Aryl radical precursors", name:"Aryl iodides", proc:"red", E:-2.0, type:"typical", rad:"aryl", src:"weick2023", note:"Strongly substituent-dependent. Often needs conPET, an EDA complex or a highly reducing PC. The MacMillan chart gives much less negative values for PhI (−1.16 V), PhBr (−1.76 V) and PhCl (−2.09 V). Measured potentials for aryl halides depend strongly on method and conditions, so treat both as rough guides."},
+  {cls:"Aryl radical precursors", name:"Aryl bromides", proc:"red", E:-2.4, type:"typical", rad:"aryl", src:"weick2023"},
+  {cls:"Aryl radical precursors", name:"Aryl chlorides", proc:"red", E:-2.8, type:"typical", rad:"aryl", src:"weick2023", note:"Electron-poor aryl chlorides are easier to reduce. Electron-rich ones can be below −3 V."},
+  {cls:"Sulfonyl chlorides", name:"CF₃SO₂Cl (triflyl chloride)", proc:"red", E:-0.18, type:"typical", rad:"CF₃• (after −SO₂, −Cl⁻)", src:"amos2020", note:"The MacMillan chart gives the same value."},
+  {cls:"Sulfonyl chlorides", name:"Arylsulfonyl chlorides", proc:"red", E:-1.3, type:"typical", rad:"sulfonyl / aryl", src:"amos2020", note:"Given as about −1.30 V or lower; one example in Amos 2020 is −0.94 V."},
+  {cls:"Oxime derivatives", name:"Nitro-substituted O-aryl oximes", proc:"red", E:[-0.55,-0.93], type:"range", rad:"iminyl", src:"amos2020", note:"Leonori-type iminyl precursors, reduced by eosin Y."},
+  {cls:"N-Halo reagents", name:"N-Chlorosuccinimide", proc:"red", E:-0.27, type:"Ep/2", rad:"succinimidyl / Cl•", src:"roth2016", prov:true},
+  // ---- MacMillan/Merck chart (read from the chart figure; secondary) ----
+  {cls:"Arenes", name:"Benzene", proc:"ox", E:2.30, type:"chart", rad:"arene radical cation", src:"chart2014"},
+  {cls:"Arenes", name:"Toluene", proc:"ox", E:2.28, type:"chart", rad:"arene radical cation / benzyl", src:"chart2014"},
+  {cls:"Arenes", name:"Thiophene", proc:"ox", E:2.15, type:"chart", rad:"heteroarene radical cation", src:"chart2014"},
+  {cls:"Alkenes", name:"Tetramethylethylene", proc:"ox", E:1.81, type:"chart", rad:"alkene radical cation", src:"chart2014"},
+  {cls:"Arenes", name:"Anisole", proc:"ox", E:1.76, type:"chart", rad:"arene radical cation", src:"chart2014"},
+  {cls:"Sulfides", name:"Benzyl methyl sulfide", proc:"ox", E:1.63, type:"chart", rad:"sulfide radical cation", src:"chart2014"},
+  {cls:"Alkenes", name:"trans-β-Methylstyrene", proc:"ox", E:1.60, type:"chart", rad:"alkene radical cation", src:"chart2014"},
+  {cls:"Carboxylates", name:"Acetate", proc:"ox", E:1.24, type:"chart", rad:"methyl (after −CO₂)", src:"chart2014"},
+  {cls:"Heteroarenes", name:"Indole", proc:"ox", E:1.21, type:"chart", rad:"indole radical cation", src:"chart2014"},
+  {cls:"Amines", name:"Aniline", proc:"ox", E:0.98, type:"chart", rad:"aminium", src:"chart2014"},
+  {cls:"Quinones", name:"1,4-Benzoquinone", proc:"red", E:-0.45, type:"chart", rad:"semiquinone", src:"chart2014"},
+  {cls:"α-Halo carbonyls", name:"Phenacyl bromide", proc:"red", E:-0.49, type:"chart", rad:"phenacyl (after −Br⁻)", src:"chart2014"},
+  {cls:"Azides", name:"4-Nitrophenyl azide", proc:"red", E:-0.83, type:"chart", rad:"radical anion", src:"chart2014"},
+  {cls:"Michael acceptors", name:"Maleic anhydride", proc:"red", E:-0.85, type:"chart", rad:"radical anion", src:"chart2014"},
+  {cls:"CF₃ / fluoroalkyl", name:"CF₃I", proc:"red", E:-1.22, type:"chart", rad:"CF₃• (after −I⁻)", src:"chart2014"},
+  {cls:"Alkyl halides", name:"Benzyl bromide", proc:"red", E:-1.71, type:"chart", rad:"benzyl", src:"chart2014"},
+  {cls:"Carbonyls", name:"Benzaldehyde", proc:"red", E:-1.93, type:"chart", rad:"ketyl", src:"chart2014"},
+  {cls:"Heteroarenes", name:"Pyrazine", proc:"red", E:-2.08, type:"chart", rad:"radical anion", src:"chart2014"},
+  {cls:"Carbonyls", name:"Acetophenone", proc:"red", E:-2.14, type:"chart", rad:"ketyl", src:"chart2014"},
+  {cls:"Carbonyls", name:"Benzoic acid", proc:"red", E:-2.24, type:"chart", rad:"radical anion", src:"chart2014"},
+  {cls:"N-Oxides", name:"Pyridine N-oxide", proc:"red", E:-2.30, type:"chart", rad:"radical anion / O-centred", src:"chart2014"},
+  {cls:"Alkyl halides", name:"1-Iodobutane", proc:"red", E:-2.33, type:"chart", rad:"n-butyl (after −I⁻)", src:"chart2014", note:"Unactivated alkyl iodides are usually activated by XAT (e.g. α-aminoalkyl or silyl radicals), not by direct SET."}
+];
+
+/* =====================================================================
+   REFERENCE SCALES — position of each reference electrode vs SCE (V).
+   E(vs X) = E(vs SCE) − pos(X).  Fc position depends on solvent.
+   ===================================================================== */
+const SOLVENTS = [
+  {id:"mecn_pa", label:"MeCN — Fc 0.38 V (Pavlishchuk & Addison)", fc:0.38, src:"pavl2000"},
+  {id:"mecn_cg", label:"MeCN — Fc 0.40 V (Connelly & Geiger)", fc:0.40, src:"cg1996"},
+  {id:"dcm", label:"CH₂Cl₂ — Fc 0.46 V", fc:0.46, src:"cg1996"},
+  {id:"dmf", label:"DMF — Fc 0.45 V", fc:0.45, src:"cg1996"},
+  {id:"dmso", label:"DMSO — Fc 0.43 V", fc:0.43, src:"cg1996"},
+  {id:"acetone", label:"Acetone — Fc 0.48 V", fc:0.48, src:"cg1996"},
+  {id:"thf", label:"THF — Fc 0.56 V", fc:0.56, src:"cg1996"}
+];
+const SCALES = [
+  {id:"SCE",   label:"SCE",                   pos:()=>0},
+  {id:"Fc",    label:"Fc⁺/Fc",                pos:(fc)=>fc},
+  {id:"NHE",   label:"NHE / SHE",             pos:()=>-0.241},
+  {id:"AgCl_s",label:"Ag/AgCl (sat. KCl)",    pos:()=>0.197-0.241},
+  {id:"AgCl_3",label:"Ag/AgCl (3 M KCl)",     pos:()=>0.210-0.241}
+];
+const FC_MECN = 0.38;
+const sc = id => SCALES.find(s=>s.id===id);
+const solv = id => SOLVENTS.find(s=>s.id===id);
+function convert(E, from, to, fc){ return E + sc(from).pos(fc) - sc(to).pos(fc); }
+const fmt = (v,d=2)=> (v===null||v===undefined||isNaN(v)) ? "—" : (v>0?"+":(v<0?"−":""))+Math.abs(v).toFixed(d);
+const fmtPlain = v => (v===null||v===undefined) ? "—" : v;
+function fillSelect(el, items, val){ el.innerHTML = items.map(i=>`<option value="${i.id}">${i.label}</option>`).join(""); if(val) el.value=val; }
+function srcCell(key, extraKey){
+  const r=REFS[key];
+  let h=`<a href="${refLink(r)}" target="_blank" rel="noopener">${r.short}</a> ${kindPill(r.kind)}`;
+  if(extraKey && extraKey!==key){ const e=REFS[extraKey]; h+=`<br><span class="small">† E₀,₀: <a href="${refLink(e)}" target="_blank" rel="noopener">${e.short}</a></span>`; }
+  return h;
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x===b));
+  document.querySelectorAll("section").forEach(s=>s.classList.toggle("active",s.id===b.dataset.tab));
+  history.replaceState(null,"","#"+b.dataset.tab);
+});
+if(location.hash){ const t=document.querySelector(`nav button[data-tab="${location.hash.slice(1)}"]`); if(t) t.click(); }
+
+/* ---------- converter ---------- */
+const cvE=document.getElementById("cv-E"), cvF=document.getElementById("cv-from"), cvT=document.getElementById("cv-to"), cvS=document.getElementById("cv-solv");
+fillSelect(cvF,SCALES,"SCE"); fillSelect(cvT,SCALES,"Fc"); fillSelect(cvS,SOLVENTS,"mecn_pa");
+function runConv(){
+  const E=parseFloat(cvE.value), s=solv(cvS.value);
+  document.getElementById("cv-out").textContent = isNaN(E) ? "—" : `${fmt(convert(E,cvF.value,cvT.value,s.fc),3)} V vs ${sc(cvT.value).label}`;
+  document.getElementById("cv-all").innerHTML = "<tr>"+SCALES.map(x=>`<th>${x.label}</th>`).join("")+"</tr><tr>"+
+    SCALES.map(x=>`<td>${isNaN(E)?"—":fmt(convert(E,cvF.value,x.id,s.fc),3)}</td>`).join("")+"</tr>";
+  const usesFc = [cvF.value,cvT.value].includes("Fc") && cvF.value!==cvT.value;
+  document.getElementById("cv-note").innerHTML =
+    `Fc⁺/Fc = ${fmt(s.fc,2)} V vs SCE in this solvent [${REFS[s.src].short}]. ` +
+    (s.id.startsWith("mecn") ? "" : "Outside MeCN, conversions to NHE or Ag/AgCl carry an unknown junction potential; report vs Fc⁺/Fc where possible. ") +
+    (usesFc ? "Converting between Fc⁺/Fc and an aqueous reference depends on the solvent/electrolyte constant above, so state which one you used. " : "") +
+    "Results are given to 3 decimals for traceability, but real uncertainty is typically ±10–20 mV or worse.";
+}
+[cvE,cvF,cvT,cvS].forEach(e=>e.addEventListener("input",runConv)); runConv();
+
+/* ---------- excited-state calculator ---------- */
+const exPick=document.getElementById("ex-pick"), exRef=document.getElementById("ex-ref"),
+      exOx=document.getElementById("ex-ox"), exRed=document.getElementById("ex-red"),
+      exE00=document.getElementById("ex-e00"), exLam=document.getElementById("ex-lam"),
+      exMode=document.getElementById("ex-mode"), exSub=document.getElementById("ex-sub");
+fillSelect(exRef,SCALES.filter(s=>s.id==="SCE"||s.id==="Fc"||s.id==="NHE"),"SCE");
+DATA.forEach((d,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=d.name; exPick.appendChild(o); });
+let pickedTab = null;  // tabulated excited-state values if the PC has no ground-state/E00 route
+function pickPC(i){
+  const d=DATA[i]; if(!d){ pickedTab=null; runExc(); return; }
+  const to=exRef.value, c = v => v===null ? "" : convert(v,"SCE",to,FC_MECN).toFixed(2);
+  exOx.value = c(d.ox); exRed.value = c(d.red);
+  exE00.value = d.e00!==null ? d.e00 : ""; exLam.value="";
+  pickedTab = {oxs: d.oxs===null?null:convert(d.oxs,"SCE",to,FC_MECN), reds: d.reds===null?null:convert(d.reds,"SCE",to,FC_MECN)};
+  runExc();
+}
+exPick.addEventListener("change",()=>pickPC(exPick.value));
+exRef.addEventListener("change",()=>{ if(exPick.value!=="") pickPC(exPick.value); else runExc(); });
+exLam.addEventListener("input",()=>{ const l=parseFloat(exLam.value); if(l>0){ exE00.value=(1239.84/l).toFixed(3);} runExc(); });
+[exOx,exRed,exE00].forEach(e=>e.addEventListener("input",()=>{ if(e!==exSub) pickedTab=null, exPick.value=""; runExc(); }));
+exSub.addEventListener("input",runExc);
+function setModeLabel(){
+  document.getElementById("ex-sub-lab").innerHTML = exMode.value==="red"
+    ? "Substrate E<sub>1/2</sub>(S<sup>•+</sup>/S) (V, same scale)"
+    : "Substrate E<sub>1/2</sub>(S/S<sup>•−</sup>) (V, same scale)";
+}
+exMode.addEventListener("change",()=>{ setModeLabel(); runExc(); });
+function runExc(){
+  const ox=parseFloat(exOx.value), red=parseFloat(exRed.value), e00=parseFloat(exE00.value), r=sc(exRef.value).label;
+  const cOxs = ox - e00, cReds = red + e00;
+  let oxs=cOxs, reds=cReds, oxsHow="= E(PC•+/PC) − E₀,₀", redsHow="= E(PC/PC•−) + E₀,₀";
+  if(pickedTab && pickedTab.oxs!==null){ oxs=pickedTab.oxs; oxsHow = "literature value" + (isNaN(cOxs) ? "" : (Math.abs(cOxs-oxs)>0.05 ? ` — recalculating from the listed E₀,₀ gives ${fmt(cOxs)} V (the source used a different E₀,₀ estimate)` : " (matches E(PC•+/PC) − E₀,₀)")); }
+  if(pickedTab && pickedTab.reds!==null){ reds=pickedTab.reds; redsHow = "literature value" + (isNaN(cReds) ? "" : (Math.abs(cReds-reds)>0.05 ? ` — recalculating from the listed E₀,₀ gives ${fmt(cReds)} V (the source used a different E₀,₀ estimate)` : " (matches E(PC/PC•−) + E₀,₀)")); }
+  document.getElementById("ex-oxs").textContent = isNaN(oxs) ? "—" : `${fmt(oxs)} V vs ${r}`;
+  document.getElementById("ex-reds").textContent = isNaN(reds) ? "—" : `${fmt(reds)} V vs ${r}`;
+  document.getElementById("ex-oxs-how").textContent = oxsHow;
+  document.getElementById("ex-reds-how").textContent = redsHow;
+  const s=parseFloat(exSub.value); let dg=NaN, txt="";
+  if(exMode.value==="red"){ dg = s - reds; txt = "ΔG ≈ E(S•+/S) − E(PC*/PC•−)"; }
+  else { dg = oxs - s; txt = "ΔG ≈ E(PC•+/PC*) − E(S/S•−)"; }
+  const out=document.getElementById("ex-dg");
+  if(isNaN(dg)){ out.textContent="—"; out.style.color=""; document.getElementById("ex-dg-txt").textContent = txt + " (in eV, for a one-electron transfer)"; return; }
+  out.textContent = `${fmt(dg)} eV  (${fmt(dg*96.485,0)} kJ/mol)`;
+  out.style.color = dg < -0.05 ? "var(--good)" : (dg <= 0.15 ? "var(--mid)" : "var(--bad)");
+  document.getElementById("ex-dg-txt").textContent = txt + " — " + (dg < -0.05 ? "exergonic: electron transfer thermodynamically feasible." : (dg <= 0.15 ? "close to thermoneutral: possible, but check by Stern–Volmer quenching." : "endergonic: direct SET unlikely; consider a stronger photocatalyst or another mechanism (EnT, PCET, HAT, EDA complex)."));
+}
+setModeLabel(); runExc();
+
+/* ---------- generic sortable table helper ---------- */
+function attachSort(tableId, state, render){
+  document.querySelectorAll(`#${tableId} th[data-k]`).forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k; state.dir = (state.k===k)?-state.dir:1; state.k=k; render();
+  });
+}
+const sortVal = v => Array.isArray(v) ? (v[0]+v[1])/2 : v;
+function sortRows(rows, st){
+  if(!st.k) return rows;
+  return rows.sort((a,b)=>{ const x=sortVal(a[st.k]), y=sortVal(b[st.k]);
+    if(x===null||x===undefined) return 1; if(y===null||y===undefined) return -1;
+    return (typeof x==="string"? x.localeCompare(y): x-y)*st.dir; });
+}
+function csvDownload(name, header, rows){
+  const esc = v => { const s = (v===null||v===undefined) ? "" : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
+  const blob = new Blob(["﻿"+[header,...rows].map(r=>r.map(esc).join(",")).join("\n")],{type:"text/csv"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+/* ---------- photocatalyst table ---------- */
+const tbQ=document.getElementById("tb-q"), tbRef=document.getElementById("tb-ref"), tbCls=document.getElementById("tb-cls");
+fillSelect(tbRef,SCALES,"SCE");
+const pcSort={k:null,dir:1};
+attachSort("tb",pcSort,renderTable);
+function renderTable(){
+  const q=tbQ.value.toLowerCase().trim(), to=tbRef.value, conv = to!=="SCE";
+  let rows = DATA.map((d,i)=>({...d,i})).filter(d=>(!tbCls.value||d.cls===tbCls.value) && (!q || (d.name+" "+d.cls+" "+(d.note||"")).toLowerCase().includes(q)));
+  rows = sortRows(rows, pcSort);
+  const pc = v => v===null ? "—" : fmt(conv? convert(v,"SCE",to,FC_MECN): v) + (conv?'<span class="pill">conv.</span>':"");
+  document.querySelector("#tb tbody").innerHTML = rows.map(d=>`
+    <tr>
+      <td><b>${d.name}</b>${d.note?`<div class="small muted">${d.note}</div>`:""}</td>
+      <td class="num">${pc(d.ox)}</td><td class="num">${pc(d.red)}</td>
+      <td class="num rd">${pc(d.oxs)}</td><td class="num ox">${pc(d.reds)}</td>
+      <td class="num">${d.e00===null?"—":d.e00.toFixed(2)}${d.e00src&&d.e00src!==d.src?'<span class="sup">†</span>':""}</td>
+      <td class="num">${fmtPlain(d.labs)}</td><td class="num">${fmtPlain(d.lem)}</td><td class="num">${fmtPlain(d.tau)}</td>
+      <td class="small src">${srcCell(d.src,d.e00src)}</td>
+      <td><button class="btn" data-use="${d.i}">Use →</button></td>
+    </tr>`).join("") || `<tr><td colspan="11" class="muted">No match.</td></tr>`;
+  document.querySelectorAll("#tb [data-use]").forEach(b=>b.onclick=()=>{
+    document.querySelector('nav button[data-tab="exc"]').click();
+    exPick.value=b.dataset.use; pickPC(b.dataset.use);
+  });
+}
+[tbQ,tbRef,tbCls].forEach(e=>e.addEventListener("input",renderTable)); renderTable();
+document.getElementById("pc-csv").onclick=()=>csvDownload("photocatalysts_vs_SCE_MeCN.csv",
+  ["photocatalyst","class","E(PC+/PC) V vs SCE","E(PC/PC-) V vs SCE","E(PC+/PC*) V vs SCE","E(PC*/PC-) V vs SCE","E00 eV","lambda_abs nm","lambda_em nm","tau ns","source","doi_or_url","E00 source","note"],
+  DATA.map(d=>[d.name,d.cls,d.ox,d.red,d.oxs,d.reds,d.e00,d.labs,d.lem,d.tau,REFS[d.src].txt,refLink(REFS[d.src]),d.e00src?REFS[d.e00src].short:"",d.note||""]));
+
+/* ---------- precursor table ---------- */
+const prQ=document.getElementById("pr-q"), prProc=document.getElementById("pr-proc"), prRef=document.getElementById("pr-ref"), prPC=document.getElementById("pr-pc");
+fillSelect(prRef,SCALES,"SCE");
+DATA.forEach((d,i)=>{ if(d.reds!==null||d.oxs!==null||d.red!==null){ const o=document.createElement("option"); o.value=i; o.textContent=d.name; prPC.appendChild(o);} });
+const prSort={k:null,dir:1};
+attachSort("pr",prSort,renderPre);
+const fmtE = (E,to) => { const c = v => fmt(to==="SCE"? v : convert(v,"SCE",to,FC_MECN));
+  return Array.isArray(E) ? `${c(E[0])} to ${c(E[1])}` : c(E); };
+function dgFor(p, pc){
+  // returns {best, worst, how} in eV, or null
+  const vals = Array.isArray(p.E) ? p.E : [p.E, p.E];
+  if(p.proc==="ox"){
+    if(pc.reds===null) return null;
+    const g = vals.map(E=>E - pc.reds);
+    return {lo:Math.min(...g), hi:Math.max(...g), how:"PC* oxidises precursor"};
+  } else {
+    const opts=[];
+    if(pc.oxs!==null) opts.push({k:"PC* (oxidative quenching)", g: vals.map(E=>pc.oxs - E)});
+    if(pc.red!==null) opts.push({k:"PC•− (after reductive quenching)", g: vals.map(E=>pc.red - E)});
+    if(!opts.length) return null;
+    opts.forEach(o=>{o.lo=Math.min(...o.g); o.hi=Math.max(...o.g);});
+    opts.sort((a,b)=>a.lo-b.lo);
+    return {lo:opts[0].lo, hi:opts[0].hi, how:opts[0].k};
+  }
+}
+const dgClass = g => g < -0.05 ? "good" : (g <= 0.15 ? "mid" : "bad");
+function renderPre(){
+  const q=prQ.value.toLowerCase().trim(), to=prRef.value, conv=to!=="SCE", pc = prPC.value===""? null : DATA[prPC.value];
+  document.getElementById("pr-dg-h").style.display = pc ? "" : "none";
+  document.getElementById("pr-legend").style.display = pc ? "" : "none";
+  let rows = PRE.map((p,i)=>({...p,i})).filter(p=>(!prProc.value||p.proc===prProc.value) && (!q || (p.cls+" "+p.name+" "+p.rad+" "+(p.note||"")).toLowerCase().includes(q)));
+  rows = sortRows(rows, prSort);
+  document.querySelector("#pr tbody").innerHTML = rows.map(p=>{
+    let dgCell="";
+    if(pc){
+      const g=dgFor(p,pc);
+      dgCell = g ? `<td><span class="dg ${dgClass(g.lo)}">${g.lo===g.hi?fmt(g.lo):fmt(g.lo)+" to "+fmt(g.hi)}</span><div class="small muted">${g.how}</div></td>` : `<td class="muted small">needs a value the source does not give</td>`;
+    }
+    return `<tr>
+      <td><b>${p.cls}</b></td>
+      <td>${p.name}${p.prov?' <span class="pill prov">provisional</span>':""}${p.note?`<div class="small muted">${p.note}</div>`:""}</td>
+      <td class="${p.proc==="ox"?"ox":"rd"}">${p.proc==="ox"?"oxidised":"reduced"}</td>
+      <td class="num">${fmtE(p.E,to)}${conv?'<span class="pill">conv.</span>':""}</td>
+      <td><span class="tag">${p.type}</span></td>
+      <td class="small">${p.rad}</td>
+      ${dgCell}
+      <td class="small src">${srcCell(p.src)}</td>
+      <td><button class="btn" data-pre="${p.i}">Use →</button></td>
+    </tr>`; }).join("") || `<tr><td colspan="9" class="muted">No match.</td></tr>`;
+  document.querySelectorAll("#pr [data-pre]").forEach(b=>b.onclick=()=>{
+    const p=PRE[b.dataset.pre];
+    document.querySelector('nav button[data-tab="exc"]').click();
+    exMode.value = p.proc==="ox" ? "red" : "ox"; setModeLabel();
+    const E = Array.isArray(p.E) ? (p.proc==="ox" ? Math.min(...p.E) : Math.max(...p.E)) : p.E;
+    exSub.value = convert(E,"SCE",exRef.value,FC_MECN).toFixed(2);
+    if(pc && exPick.value===""){ exPick.value=prPC.value; pickPC(prPC.value); }
+    runExc();
+  });
+}
+[prQ,prProc,prRef,prPC].forEach(e=>e.addEventListener("input",renderPre)); renderPre();
+document.getElementById("pr-csv").onclick=()=>csvDownload("radical_precursors_vs_SCE_MeCN.csv",
+  ["class","example","activation","E V vs SCE (low)","E V vs SCE (high)","value type","radical formed","provisional","source","doi_or_url","note"],
+  PRE.map(p=>[p.cls,p.name,p.proc==="ox"?"oxidised":"reduced",Array.isArray(p.E)?p.E[0]:p.E,Array.isArray(p.E)?p.E[1]:p.E,p.type,p.rad,p.prov?"yes":"",REFS[p.src].txt,refLink(REFS[p.src]),p.note||""]));
+
+/* ---------- references ---------- */
+document.getElementById("refs").innerHTML = Object.values(REFS).map(r=>`<li>${r.txt} ${kindPill(r.kind)} <a href="${refLink(r)}" target="_blank" rel="noopener">${r.doi?"doi:"+r.doi:"link"}</a></li>`).join("");
+</script>
+</body>
+</html>
