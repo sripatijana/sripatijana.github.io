@@ -1,0 +1,36 @@
+name: Chem Radar - update feeds
+
+on:
+  schedule:
+    - cron: "17 * * * *"   # every hour
+  workflow_dispatch:        # manual "Run workflow" button
+  push:
+    branches: [main]
+    paths: ["chemradar/journals.json", "chemradar/scripts/**"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: chemradar-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install feedparser
+      - run: python chemradar/scripts/fetch_feeds.py
+      - name: Commit data
+        run: |
+          git config user.name "chemradar-bot"
+          git config user.email "chemradar-bot@users.noreply.github.com"
+          git add chemradar/data/
+          git diff --cached --quiet && exit 0
+          git commit -m "Chem Radar: update feeds $(date -u +'%Y-%m-%d %H:%M')"
+          git pull --rebase origin main
+          git push origin HEAD:main
