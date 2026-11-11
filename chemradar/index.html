@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chem Radar — latest chemistry articles</title>
+<meta name="description" content="The newest ASAP / early-view articles from leading chemistry journals in one feed.">
+<meta name="theme-color" content="#0f172a">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%230f766e'/><circle cx='16' cy='16' r='8' fill='none' stroke='white' stroke-width='2'/><circle cx='16' cy='16' r='2.5' fill='white'/></svg>">
+<style>
+:root{
+  --bg:#f6f7f9;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;
+  --accent:#0f766e;--accent-soft:#ccfbf1;--new:#f59e0b;--star:#eab308;
+  --radius:12px;--shadow:0 1px 2px rgba(15,23,42,.06),0 1px 3px rgba(15,23,42,.04);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0b1120;--card:#111827;--ink:#e5e7eb;--muted:#94a3b8;--line:#1f2937;
+  --accent:#2dd4bf;--accent-soft:#134e4a;--shadow:none;}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
+a{color:inherit}
+button{font:inherit;cursor:pointer}
+header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar{max-width:980px;margin:0 auto;padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px;letter-spacing:-.01em;margin-right:auto}
+.brand small{font-weight:400;color:var(--muted);font-size:12px}
+.search{flex:1 1 220px;max-width:340px;position:relative}
+.search input{width:100%;padding:8px 12px 8px 32px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);outline:none}
+.search input:focus{border-color:var(--accent)}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 12px;border-radius:999px;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.ghost{border-color:transparent;background:transparent}
+.pill{background:var(--new);color:#111;border-radius:999px;font-size:12px;font-weight:700;padding:0 7px;min-width:20px;text-align:center}
+.pill.zero{background:var(--line);color:var(--muted)}
+.sub{max-width:980px;margin:0 auto;padding:0 16px 10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tab{border:0;background:transparent;color:var(--muted);padding:5px 11px;border-radius:999px}
+.tab.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.sep{width:1px;height:18px;background:var(--line);margin:0 4px}
+.meta{margin-left:auto;color:var(--muted);font-size:12px}
+main{max-width:980px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:1fr auto;gap:4px 16px;position:relative}
+.card.new::before{content:"";position:absolute;left:-1px;top:12px;bottom:12px;width:3px;border-radius:3px;background:var(--new)}
+.top{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.jn{font-weight:700;padding:1px 8px;border-radius:999px;color:#fff;font-size:11.5px}
+.title{font-size:16.5px;font-weight:600;line-height:1.35;margin:2px 0;text-decoration:none}
+.title:hover{color:var(--accent)}
+.auth{font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.abs{font-size:13.5px;margin-top:6px;display:none}
+.card.open .abs{display:block}
+.toc{grid-row:1/span 4;grid-column:2;width:170px;max-height:120px;object-fit:contain;border-radius:8px;background:#fff;cursor:zoom-in;border:1px solid var(--line)}
+.acts{display:flex;gap:2px;margin-top:6px;margin-left:-8px}
+.acts .btn{padding:3px 8px;font-size:12.5px;color:var(--muted)}
+.acts .btn.saved{color:var(--star)}
+.empty{text-align:center;color:var(--muted);padding:60px 10px}
+.pager{display:flex;justify-content:center;align-items:center;gap:12px;margin:20px 0 40px;color:var(--muted)}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:0 16px 30px}
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);padding:0;width:min(720px,94vw);max-height:86vh}
+dialog::backdrop{background:rgba(2,6,23,.5)}
+.dh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dh h2{font-size:17px;margin:0 auto 0 0}
+.db{padding:6px 18px 12px;overflow:auto;max-height:60vh}
+.db h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 10px}
+.grid label{display:flex;gap:8px;align-items:center;padding:4px 6px;border-radius:8px;cursor:pointer;font-size:14px}
+.grid label:hover{background:var(--bg)}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.cnt{margin-left:auto;color:var(--muted);font-size:12px}
+.df{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+#zoom{width:auto;max-width:94vw;padding:10px;background:#fff}
+#zoom img{max-width:90vw;max-height:80vh;display:block}
+@media (max-width:640px){
+  .toc{grid-row:auto;grid-column:1;width:100%;max-height:180px;margin-top:6px}
+  .card{grid-template-columns:1fr}
+  .brand small{display:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">
+      <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="var(--accent)"/><circle cx="16" cy="16" r="8" fill="none" stroke="#fff" stroke-width="2"/><circle cx="16" cy="16" r="2.5" fill="#fff"/></svg>
+      Chem Radar <small>latest from the journals</small>
+    </div>
+    <label class="search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Search title, author, abstract…  ( / )" autocomplete="off">
+    </label>
+    <button class="btn" id="refresh" title="Reload the feed">↻ Refresh <span id="newPill" class="pill zero">0</span></button>
+    <button class="btn" id="openJ">Journals</button>
+  </div>
+  <div class="sub">
+    <button class="tab on" data-view="feed">Feed</button>
+    <button class="tab" data-view="library">Library <span id="libCount">0</span></button>
+    <span class="sep"></span>
+    <button class="tab" data-range="1">24 h</button>
+    <button class="tab" data-range="3">3 d</button>
+    <button class="tab on" data-range="7">7 d</button>
+    <button class="tab" data-range="0">All</button>
+    <span class="sep"></span>
+    <button class="tab" id="onlyNew">Unread only</button>
+    <button class="tab" id="markRead">Mark all read</button>
+    <span class="meta" id="meta"></span>
+  </div>
+</header>
+
+<main id="list"><div class="empty">Loading latest articles…</div></main>
+<div class="pager" id="pager"></div>
+
+<footer>
+  Titles, authors and abstracts come from each publisher's public RSS feed; every article links to the publisher's page.
+  Your journal choices and library are stored only in this browser.
+  <span id="libTools" hidden> · <a href="#" id="exportLib">Export library</a></span>
+  <br><a href="../useful-links.html">More chemistry tools by Sripati Jana</a>
+</footer>
+
+<dialog id="jdlg">
+  <div class="dh">
+    <h2>Journals</h2>
+    <button class="btn" id="jAll">Select all</button>
+    <button class="btn" id="jDef">Defaults</button>
+    <button class="btn" id="jNone">Clear</button>
+  </div>
+  <div class="db" id="jbody"></div>
+  <div class="df">
+    <button class="btn" id="jCancel">Cancel</button>
+    <button class="btn primary" id="jSave">Save &amp; refresh</button>
+  </div>
+</dialog>
+<dialog id="zoom"><img alt="Graphical abstract"></dialog>
+
+<script>
+(() => {
+"use strict";
+const PER_PAGE = 30;
+const PALETTE = {ACS:"#1d4ed8",Wiley:"#0e7490",Nature:"#b91c1c",RSC:"#7c3aed",AAAS:"#be123c",Cell:"#c2410c"};
+const $ = s => document.querySelector(s);
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem("cr:"+k); return v===null ? d : JSON.parse(v); }catch{ return d; } },
+  set(k, v){ try{ localStorage.setItem("cr:"+k, JSON.stringify(v)); }catch{} }
+};
+
+let journals = [], articles = [], jmap = {}, updated = null;
+let selected = new Set(store.get("journals", null) || []);
+let library = store.get("library", {});
+let lastSeen = store.get("lastSeen", null);
+let state = {view:"feed", range:7, q:"", page:1, onlyNew:false};
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ago = iso => {
+  const m = (Date.now() - new Date(iso)) / 6e4;
+  if (m < 60) return Math.max(1, Math.round(m)) + " min ago";
+  if (m < 1440) return Math.round(m/60) + " h ago";
+  const d = Math.round(m/1440); return d + (d===1 ? " day ago" : " days ago");
+};
+const isNew = a => lastSeen && a.first_seen > lastSeen;
+
+async function load(){
+  try{
+    const bust = "?t=" + Math.floor(Date.now()/6e4);
+    const [jr, ar] = await Promise.all([fetch("journals.json"+bust), fetch("data/articles.json"+bust)]);
+    journals = await jr.json();
+    const data = await ar.json();
+    articles = data.articles || []; updated = data.updated;
+  }catch(e){
+    $("#list").innerHTML = `<div class="empty">Could not load the feed (${esc(e.message)}).<br>If you opened the file directly, serve the folder over HTTP instead.</div>`;
+    return;
+  }
+  jmap = Object.fromEntries(journals.map(j => [j.id, {...j, color: PALETTE[j.publisher] || "#475569"}]));
+  if (!store.get("journals", null)) selected = new Set(journals.filter(j => j.default).map(j => j.id));
+  if (!lastSeen) { lastSeen = updated; store.set("lastSeen", lastSeen); }
+  render();
+}
+
+function filtered(){
+  let list = state.view === "library"
+    ? Object.values(library).sort((a,b) => b.saved_at.localeCompare(a.saved_at))
+    : articles.filter(a => selected.has(a.journal));
+  if (state.view === "feed" && state.range){
+    const cut = new Date(Date.now() - state.range*864e5).toISOString();
+    list = list.filter(a => a.first_seen >= cut);
+  }
+  if (state.view === "feed" && state.onlyNew) list = list.filter(isNew);
+  if (state.q){
+    const terms = state.q.toLowerCase().split(/\s+/).filter(Boolean);
+    list = list.filter(a => {
+      const hay = (a.title+" "+a.authors+" "+a.summary+" "+(jmap[a.journal]?.name||"")+" "+(a.doi||"")).toLowerCase();
+      return terms.every(t => hay.includes(t));
+    });
+  }
+  return list;
+}
+
+function card(a){
+  const j = jmap[a.journal] || {name:a.journal, color:"#475569"};
+  const saved = !!library[a.id];
+  return `<article class="card${isNew(a) && state.view==="feed" ? " new":""}" data-id="${esc(a.id)}">
+    <div>
+      <div class="top"><span class="jn" style="background:${j.color}">${esc(j.name)}</span>
+        <span title="${esc(a.date)}">${ago(a.first_seen)}</span>
+        ${isNew(a) && state.view==="feed" ? '<span style="color:var(--new);font-weight:700">● new</span>':""}</div>
+      <a class="title" href="${esc(a.link)}" target="_blank" rel="noopener">${esc(a.title)}</a>
+      ${a.authors ? `<div class="auth">${esc(a.authors)}</div>`:""}
+      ${a.summary ? `<div class="abs">${esc(a.summary)}</div>`:""}
+      <div class="acts">
+        <button class="btn ghost${saved?" saved":""}" data-act="save">${saved?"★ Saved":"☆ Save"}</button>
+        ${a.summary ? '<button class="btn ghost" data-act="abs">Abstract</button>':""}
+        ${a.doi ? '<button class="btn ghost" data-act="doi">Copy DOI</button>':""}
+      </div>
+    </div>
+    ${a.image ? `<img class="toc" src="${esc(a.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:""}
+  </article>`;
+}
+
+function render(){
+  const list = filtered();
+  const pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
+  state.page = Math.min(state.page, pages);
+  const slice = list.slice((state.page-1)*PER_PAGE, state.page*PER_PAGE);
+  $("#list").innerHTML = slice.length ? slice.map(card).join("") :
+    `<div class="empty">${state.view==="library" ? "Your library is empty. Use ☆ Save on any article." :
+      articles.length ? "No articles match these filters." : "No articles yet. The first feed update runs within the hour."}</div>`;
+  $("#pager").innerHTML = pages > 1 ? `<button class="btn" id="prev" ${state.page<=1?"disabled":""}>← Prev</button>
+    <span>Page ${state.page} / ${pages} · ${list.length} articles</span>
+    <button class="btn" id="next" ${state.page>=pages?"disabled":""}>Next →</button>` :
+    (list.length ? `<span>${list.length} article${list.length===1?"":"s"}</span>`:"");
+  const nNew = articles.filter(a => selected.has(a.journal) && isNew(a)).length;
+  $("#newPill").textContent = nNew; $("#newPill").className = "pill" + (nNew ? "" : " zero");
+  $("#libCount").textContent = Object.keys(library).length;
+  $("#libTools").hidden = !Object.keys(library).length;
+  $("#meta").textContent = updated ? "Updated " + ago(updated) : "";
+  document.title = (nNew ? `(${nNew}) ` : "") + "Chem Radar — latest chemistry articles";
+}
+
+// --- events
+$("#list").addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); const img = e.target.closest(".toc");
+  if (img){ $("#zoom img").src = img.src; $("#zoom").showModal(); return; }
+  if (!b) return;
+  const el = b.closest(".card"), id = el.dataset.id;
+  const a = articles.find(x => x.id === id) || library[id];
+  if (b.dataset.act === "save"){
+    if (library[id]) delete library[id]; else library[id] = {...a, saved_at:new Date().toISOString()};
+    store.set("library", library); render();
+  } else if (b.dataset.act === "abs"){ el.classList.toggle("open"); }
+  else if (b.dataset.act === "doi"){
+    navigator.clipboard?.writeText(a.doi).then(() => { b.textContent = "Copied ✓"; setTimeout(() => b.textContent = "Copy DOI", 1200); });
+  }
+});
+$("#zoom").addEventListener("click", () => $("#zoom").close());
+$("#pager").addEventListener("click", e => {
+  if (e.target.id === "prev") state.page--; else if (e.target.id === "next") state.page++; else return;
+  render(); scrollTo({top:0, behavior:"smooth"});
+});
+document.querySelectorAll("[data-view]").forEach(t => t.onclick = () => {
+  document.querySelectorAll("[data-view]").forEach(x => x.classList.toggle("on", x===t));
+  state.view = t.dataset.view; state.page = 1; render();
+});
+document.querySelectorAll("[data-range]").forEach(t => t.onclick = () => {
+  document.querySelectorAll("[data-range]").forEach(x => x.classList.toggle("on", x===t));
+  state.range = +t.dataset.range; state.page = 1; render();
+});
+$("#onlyNew").onclick = e => { state.onlyNew = !state.onlyNew; e.target.classList.toggle("on", state.onlyNew); state.page = 1; render(); };
+$("#markRead").onclick = () => { lastSeen = updated || new Date().toISOString(); store.set("lastSeen", lastSeen); render(); };
+let qt; $("#q").addEventListener("input", e => { clearTimeout(qt); qt = setTimeout(() => { state.q = e.target.value.trim(); state.page = 1; render(); }, 150); });
+document.addEventListener("keydown", e => { if (e.key === "/" && document.activeElement.tagName !== "INPUT"){ e.preventDefault(); $("#q").focus(); } });
+$("#refresh").onclick = load;
+
+// journals dialog
+let draft;
+function drawJournals(){
+  const groups = {};
+  journals.forEach(j => (groups[j.publisher] ||= []).push(j));
+  const counts = {}; articles.forEach(a => counts[a.journal] = (counts[a.journal]||0)+1);
+  $("#jbody").innerHTML = Object.entries(groups).map(([pub, js]) => `<h3>${esc(pub)}</h3><div class="grid">` +
+    js.map(j => `<label><input type="checkbox" value="${j.id}" ${draft.has(j.id)?"checked":""}>
+      <span class="dot" style="background:${jmap[j.id].color}"></span>${esc(j.name)}<span class="cnt">${counts[j.id]||0}</span></label>`).join("") + "</div>").join("");
+}
+$("#openJ").onclick = () => { draft = new Set(selected); drawJournals(); $("#jdlg").showModal(); };
+$("#jbody").addEventListener("change", e => { e.target.checked ? draft.add(e.target.value) : draft.delete(e.target.value); });
+$("#jAll").onclick = () => { draft = new Set(journals.map(j => j.id)); drawJournals(); };
+$("#jDef").onclick = () => { draft = new Set(journals.filter(j => j.default).map(j => j.id)); drawJournals(); };
+$("#jNone").onclick = () => { draft = new Set(); drawJournals(); };
+$("#jCancel").onclick = () => $("#jdlg").close();
+$("#jSave").onclick = () => { selected = draft; store.set("journals", [...selected]); $("#jdlg").close(); state.page = 1; load(); };
+
+// export library
+$("#exportLib").onclick = e => {
+  e.preventDefault();
+  const rows = Object.values(library).map(a => `${a.authors}. ${a.title}. ${jmap[a.journal]?.name||a.journal}. ${a.doi ? "https://doi.org/"+a.doi : a.link}`);
+  const blob = new Blob([rows.join("\n\n")], {type:"text/plain"});
+  const link = Object.assign(document.createElement("a"), {href:URL.createObjectURL(blob), download:"chem-radar-library.txt"});
+  link.click(); URL.revokeObjectURL(link.href);
+};
+
+load();
+setInterval(() => { if (document.visibilityState === "visible") load(); }, 15*6e4);
+})();
+</script>
+</body>
+</html>
