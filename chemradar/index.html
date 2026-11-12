@@ -135,6 +135,8 @@ dialog::backdrop{background:rgba(2,6,23,.5)}
 (() => {
 "use strict";
 const PER_PAGE = 30;
+// Live feed from the Cloudflare Worker; falls back to the copy in this repo.
+const FEED_URL = "https://chemradar.janasripati.workers.dev/articles.json";
 const PALETTE = {ACS:"#1d4ed8",Wiley:"#0e7490",Nature:"#b91c1c",RSC:"#7c3aed",AAAS:"#be123c",Cell:"#c2410c"};
 const $ = s => document.querySelector(s);
 const store = {
@@ -160,10 +162,14 @@ const isNew = a => lastSeen && a.first_seen > lastSeen;
 async function load(){
   try{
     const bust = "?t=" + Math.floor(Date.now()/6e4);
-    const [jr, ar] = await Promise.all([fetch("journals.json"+bust), fetch("data/articles.json"+bust)]);
+    const getFeed = async () => {
+      try { const r = await fetch(FEED_URL); if (r.ok) { const d = await r.json(); if ((d.articles||[]).length) return d; } } catch {}
+      return (await fetch("data/articles.json"+bust)).json();
+    };
+    const [jr, data] = await Promise.all([fetch("journals.json"+bust), getFeed()]);
     journals = await jr.json();
-    const data = await ar.json();
-    articles = data.articles || []; updated = data.updated;
+    articles = (data.articles || []).sort((a,b) => b.first_seen.localeCompare(a.first_seen) || b.date.localeCompare(a.date));
+    updated = data.updated;
   }catch(e){
     $("#list").innerHTML = `<div class="empty">Could not load the feed (${esc(e.message)}).<br>If you opened the file directly, serve the folder over HTTP instead.</div>`;
     return;
