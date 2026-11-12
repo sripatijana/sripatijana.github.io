@@ -5,19 +5,21 @@
 // GET /articles.json  -> merged feed for the website (CORS enabled)
 // GET /status         -> per-journal fetch status
 // Requires a KV namespace bound as FEEDS.
+// ACS, Science and Cell block Cloudflare's servers, so those journals are read
+// from Crossref (newest registered DOIs) instead of the publisher RSS feeds.
 
 const JOURNALS = [
-  ["jacs", "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=jacsat"],
-  ["orglett", "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=orlef7"],
-  ["acscatal", "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=accacs"],
-  ["joc", "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=joceah"],
-  ["acscentsci", "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=acscii"],
-  ["jacsau", "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=jaaucr"],
-  ["chemrev", "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=chreay"],
-  ["accounts", "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=achre4"],
-  ["oprd", "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=oprdfk"],
-  ["organomet", "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=orgnd7"],
-  ["jmedchem", "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=jmcmar"],
+  ["jacs", "crossref:0002-7863"],
+  ["orglett", "crossref:1523-7060"],
+  ["acscatal", "crossref:2155-5435"],
+  ["joc", "crossref:0022-3263"],
+  ["acscentsci", "crossref:2374-7943"],
+  ["jacsau", "crossref:2691-3704"],
+  ["chemrev", "crossref:0009-2665"],
+  ["accounts", "crossref:0001-4842"],
+  ["oprd", "crossref:1083-6160"],
+  ["organomet", "crossref:0276-7333"],
+  ["jmedchem", "crossref:0022-2623"],
   ["angew", "https://onlinelibrary.wiley.com/action/showFeed?jc=15213773&type=etoc&feed=rss"],
   ["chemeurj", "https://onlinelibrary.wiley.com/action/showFeed?jc=15213765&type=etoc&feed=rss"],
   ["adsc", "https://onlinelibrary.wiley.com/action/showFeed?jc=16154169&type=etoc&feed=rss"],
@@ -28,15 +30,15 @@ const JOURNALS = [
   ["ncomms", "https://www.nature.com/ncomms.rss"],
   ["natcatal", "https://www.nature.com/natcatal.rss"],
   ["natsynth", "https://www.nature.com/natsynth.rss"],
-  ["science", "https://www.science.org/action/showFeed?type=axatoc&feed=rss&jc=science"],
-  ["chem", "https://www.cell.com/chem/inpress.rss"],
-  ["chemsci", "https://feeds.rsc.org/rss/sc"],
-  ["chemcomm", "https://feeds.rsc.org/rss/cc"],
-  ["obc", "https://feeds.rsc.org/rss/ob"],
-  ["qo", "https://feeds.rsc.org/rss/qo"],
-  ["greenchem", "https://feeds.rsc.org/rss/gc"],
-  ["csr", "https://feeds.rsc.org/rss/cs"],
-  ["cst", "https://feeds.rsc.org/rss/cy"],
+  ["science", "crossref:0036-8075"],
+  ["chem", "crossref:2451-9294"],
+  ["chemsci", "http://feeds.rsc.org/rss/sc"],
+  ["chemcomm", "http://feeds.rsc.org/rss/cc"],
+  ["obc", "http://feeds.rsc.org/rss/ob"],
+  ["qo", "http://feeds.rsc.org/rss/qo"],
+  ["greenchem", "http://feeds.rsc.org/rss/gc"],
+  ["csr", "http://feeds.rsc.org/rss/cs"],
+  ["cst", "http://feeds.rsc.org/rss/cy"],
 ];
 
 const RUNS_PER_HOUR = 15;           // cron */4
@@ -44,6 +46,8 @@ const KEEP_DAYS = 21;
 const MAX_PER_JOURNAL = 300;
 const SUMMARY_LEN = 350;
 const UA = "Mozilla/5.0 (compatible; ChemRadar/1.0; +https://sripatijana.github.io/chemradar/)";
+const MAX_FEED_ITEMS = 60;          // parse only the newest items of very large feeds (Wiley)
+const CROSSREF = "https://api.crossref.org/journals/{issn}/works?sort=created&order=desc&rows=40&select=DOI,title,author,created,abstract,URL";
 
 // ---------- tiny RSS / RDF / Atom parser (regex based, cheap on CPU) ----------
 const ENT = {
@@ -97,7 +101,31 @@ function text(html, limit) {
 }
 const DOI_RE = /10\.\d{4,9}\/[^\s"'<>?#]+/i;
 
+function truncateFeed(xml) {
+  let pos = 0;
+  for (let n = 0; n < MAX_FEED_ITEMS; n++) {
+    const i = xml.indexOf("</item>", pos), e = i < 0 ? xml.indexOf("</entry>", pos) : i;
+    if (e < 0) return xml;
+    pos = e + 7;
+  }
+  return xml.slice(0, pos);
+}
+
+function parseCrossref(json, journal, now) {
+  return (JSON.parse(json).message.items || []).map(w => ({
+    id: w.DOI.toLowerCase(), doi: w.DOI.toLowerCase(),
+    title: text((w.title || [""])[0]),
+    link: "https://doi.org/" + w.DOI,
+    authors: text((w.author || []).map(a => [a.given, a.family].filter(Boolean).join(" ") || a.name || "").join(", "), 300),
+    summary: text((w.abstract || "").replace(/<jats:title>[\s\S]*?<\/jats:title>/i, ""), SUMMARY_LEN),
+    image: null, journal,
+    date: (w.created && w.created["date-time"]) || now,
+    first_seen: now,
+  })).filter(a => a.title);
+}
+
 function parseFeed(xml, journal, now) {
+  xml = truncateFeed(xml);
   const items = [];
   const re = /<(item|entry)[\s>][\s\S]*?<\/\1>/gi;
   let m;
@@ -144,9 +172,12 @@ async function refresh(env, id, url) {
   const prev = prevRaw ? split(prevRaw) : null;
   let status, merged;
   try {
-    const res = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/rss+xml, application/xml;q=0.9, */*;q=0.8" }, cf: { cacheTtl: 300 } });
+    const isCr = url.startsWith("crossref:");
+    const target = isCr ? CROSSREF.replace("{issn}", url.slice(9)) : url;
+    const res = await fetch(target, { headers: { "User-Agent": UA, Accept: isCr ? "application/json" : "application/rss+xml, application/xml;q=0.9, */*;q=0.8" }, cf: { cacheTtl: 300 } });
     if (!res.ok) throw new Error("http " + res.status);
-    const items = parseFeed(await res.text(), id, now);
+    const body = await res.text();
+    const items = isCr ? parseCrossref(body, id, now) : parseFeed(body, id, now);
     if (!items.length) throw new Error("no entries");
     const old = prev ? JSON.parse(prev.json) : [];
     const seen = new Map(old.map(a => [a.id, a]));
