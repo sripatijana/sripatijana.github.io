@@ -142,7 +142,10 @@ function parseFeed(xml, journal, now) {
     const desc = tag(b, "description") || tag(b, "content:encoded") || tag(b, "summary") || tag(b, "content");
     let image = null;
     const mi = b.match(/<media:(?:content|thumbnail)[^>]*url="([^"]+)"/i) || desc.match(/<img[^>]+src=["']([^"']+)["']/i);
-    if (mi) image = decode(mi[1]);
+    if (mi) image = decode(mi[1]).trim();
+    if (image && !/^https?:\/\//i.test(image)) {
+      try { image = new URL(image, link.replace(/^http:/i, "https:")).href; } catch { image = null; }
+    }
     let authors = tags(b, "dc:creator");
     if (!authors.length) authors = tags(b, "name");
     if (!authors.length) { const a = tag(b, "author"); if (a) authors = [a]; }
