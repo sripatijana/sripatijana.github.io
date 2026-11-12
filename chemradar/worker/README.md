@@ -2,6 +2,7 @@
 
 Runs on Cloudflare's free Workers plan as `chemradar` → https://chemradar.janasripati.workers.dev
 
+- Sources: publisher RSS for Nature, Wiley and RSC (http); Crossref for ACS, Science and Chem (their feeds block Cloudflare).
 - Cron `*/4 * * * *`: refreshes 2 journals per run (rotating), so every journal is refreshed hourly and each run stays under the free plan's 10 ms CPU limit. KV writes ≈ 720/day (free limit 1,000).
 - KV namespace bound as `FEEDS` (one key per journal).
 - `GET /articles.json`: merged feed used by ../index.html (CORS enabled, cached 5 min)
